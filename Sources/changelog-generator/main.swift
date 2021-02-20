@@ -60,9 +60,50 @@ struct Added: Entry {
 //    @Argument(help: "The changelog entry describing the change.")
 //    var entryText: String
     
-        
+    func run() throws {
+        try openEditor(editor, for: .added)
+    }
+}
+
+struct Changed: Entry {
+    static var configuration: CommandConfiguration {
+        CommandConfiguration(abstract: "Creates a changelog entry for a change in functionality.")
+    }
+    
+    @Option(name: .shortAndLong, help: "The editor used to write your changelog entry. The editor program must be able to run in a subprocess whose PID is awaitable. The editor's executable must be in your $PATH. Defaults to vim.")
+    var editor: String = "vim"
+    
+//    @Argument(help: "The changelog entry describing the change.")
+//    var entryText: String
     
     func run() throws {
+        try openEditor(editor, for: .changed)
+    }
+}
+
+struct Fixed: Entry {
+    static var configuration: CommandConfiguration {
+        CommandConfiguration(abstract: "Creates a changelog entry for a bugfix.")
+    }
+    
+    @Option(name: .shortAndLong, help: "The editor used to write your changelog entry. The editor program must be able to run in a subprocess whose PID is awaitable. The editor's executable must be in your $PATH. Defaults to vim.")
+    var editor: String = "vim"
+    
+//    @Argument(help: "The changelog entry describing the change.")
+//    var entryText: String
+    
+    func run() throws {
+        try openEditor(editor, for: .fixed)
+    }
+}
+
+protocol Entry: ParsableCommand {
+    func openEditor(_ editor: String, for entryType: EntryType) throws
+//    func write(entry: ChangelogEntry)
+}
+
+extension Entry {
+    func openEditor(_ editor: String, for entryType: EntryType) throws {
         let temporaryFilePath = unreleasedChangelogsDirectory
             .appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
 //        let data = Data("\(EntryType.added.rawValue)\n-".utf8)
@@ -81,46 +122,12 @@ struct Added: Entry {
                 //            Added.exit(withError: ChangelogEntryError.noTextEntered)
             }
             
-            let changelogEntry = ChangelogEntry(type: .added, text: enteredText)
+            let changelogEntry = ChangelogEntry(type: entryType, text: enteredText)
             write(entry: changelogEntry)
         }
     }
-}
-
-struct Changed: Entry {
-    static var configuration: CommandConfiguration {
-        CommandConfiguration(abstract: "Creates a changelog entry for a change in functionality.")
-    }
     
-    @Argument(help: "The changelog entry describing the change.")
-    var entryText: String
-    
-    func run() throws {
-        let changelogEntry = ChangelogEntry(type: .changed, text: entryText)
-        write(entry: changelogEntry)
-    }
-}
-
-struct Fixed: Entry {
-    static var configuration: CommandConfiguration {
-        CommandConfiguration(abstract: "Creates a changelog entry for a bugfix.")
-    }
-    
-    @Argument(help: "The changelog entry describing the change.")
-    var entryText: String
-    
-    func run() throws {
-        let changelogEntry = ChangelogEntry(type: .fixed, text: entryText)
-        write(entry: changelogEntry)
-    }
-}
-
-protocol Entry: ParsableCommand {
-    func write(entry: ChangelogEntry)
-}
-
-extension Entry {
-    func write(entry: ChangelogEntry) {
+    private func write(entry: ChangelogEntry) {
         do {
             let uniqueFilepath = unreleasedChangelogsDirectory.appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
             let data = try JSONEncoder().encode(entry)
@@ -174,12 +181,12 @@ struct Publish: ParsableCommand {
             // actual changelog entries should be start
             
             let versionHeader = "## [\(version)] - [TODO add date]\n\n"
-            changelog.write(Data(versionHeader.utf8))
+            changelog.write(Data("\(versionHeader)".utf8))
             print(versionHeader.dropLast()) // TODO write and log together?
             
             groupedEntries.keys.sorted().forEach { entryType in
-                let header = "### \(entryType.rawValue.localizedCapitalized)\n"
-                let headerData = Data("\(header)".utf8)
+                let header = "### \(entryType.rawValue.localizedCapitalized)"
+                let headerData = Data("\(header)\n".utf8)
                 changelog.write(headerData)
                 print(header)
                 
@@ -196,11 +203,12 @@ struct Publish: ParsableCommand {
             changelog.closeFile()
                         
             try fileManager.contentsOfDirectory(at: unreleasedChangelogsDirectory, includingPropertiesForKeys: [], options: .skipsSubdirectoryDescendants)
-                .forEach { url in
-                    print("(dry run) would have deleted \(url.lastPathComponent)")
-                }
-            // TODO enable dry run
-//                .forEach(fileManager.removeItem(at:))
+                // TODO enable dry run
+
+//                .forEach { url in
+//                    print("(dry run) would have deleted \(url.lastPathComponent)")
+//                }
+                .forEach(fileManager.removeItem(at:))
         } catch {
             Changelog.exit(withError: error)
         }
