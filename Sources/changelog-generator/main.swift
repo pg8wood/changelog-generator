@@ -17,92 +17,26 @@ let unreleasedChangelogsDirectory = URL(fileURLWithPath: "changelogs/unreleased"
 struct Changelog: ParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Curbing Cumbersome Changelog Conflicts.",
-        subcommands: [Added.self, Changed.self, Fixed.self, Publish.self])
+        subcommands: [Log.self, Publish.self])
 }
 
-enum EntryType: String, Codable, Comparable, EnumerableFlag {
-    static func < (lhs: EntryType, rhs: EntryType) -> Bool {
-        lhs.rawValue < rhs.rawValue
-    }
+struct Log: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Create a new changelog entry.")
     
-    case added
-    case changed
-    case fixed
-}
-
-struct ChangelogEntry: Codable {
-    let type: EntryType
-    let text: String
-}
-
-enum ChangelogError: Error {
-    case noEntriesFound
-    case noTextEntered
+    @Argument(help: "The type of changelog entry to create. Vaid types are addition, change, and fix.")
+    var entryType: EntryType
     
-    var localizedDescription: String {
-        switch self {
-        case .noEntriesFound:
-            return "No unreleased changelog entries were found."
-        case .noTextEntered:
-            return "The changelog entry was empty."
-        }
-    }
-}
-
-struct Added: Entry {
-    static var configuration: CommandConfiguration {
-        CommandConfiguration(abstract: "Creates a changelog entry for added functionality.")
-    }
-    
-    @Option(name: .shortAndLong, help: "The editor used to write your changelog entry. The editor program must be able to run in a subprocess whose PID is awaitable. The editor's executable must be in your $PATH. Defaults to vim.")
+    @Option(name: .shortAndLong, help: "A terminal-based text editor executable in your $PATH used to write your changelog entry.")
     var editor: String = "vim"
     
 //    @Argument(help: "The changelog entry describing the change.")
 //    var entryText: String
     
     func run() throws {
-        try openEditor(editor, for: .added)
-    }
-}
-
-struct Changed: Entry {
-    static var configuration: CommandConfiguration {
-        CommandConfiguration(abstract: "Creates a changelog entry for a change in functionality.")
+        try openEditor(editor, for: entryType)
     }
     
-    @Option(name: .shortAndLong, help: "The editor used to write your changelog entry. The editor program must be able to run in a subprocess whose PID is awaitable. The editor's executable must be in your $PATH. Defaults to vim.")
-    var editor: String = "vim"
-    
-//    @Argument(help: "The changelog entry describing the change.")
-//    var entryText: String
-    
-    func run() throws {
-        try openEditor(editor, for: .changed)
-    }
-}
-
-struct Fixed: Entry {
-    static var configuration: CommandConfiguration {
-        CommandConfiguration(abstract: "Creates a changelog entry for a bugfix.")
-    }
-    
-    @Option(name: .shortAndLong, help: "The editor used to write your changelog entry. The editor program must be able to run in a subprocess whose PID is awaitable. The editor's executable must be in your $PATH. Defaults to vim.")
-    var editor: String = "vim"
-    
-//    @Argument(help: "The changelog entry describing the change.")
-//    var entryText: String
-    
-    func run() throws {
-        try openEditor(editor, for: .fixed)
-    }
-}
-
-protocol Entry: ParsableCommand {
-    func openEditor(_ editor: String, for entryType: EntryType) throws
-//    func write(entry: ChangelogEntry)
-}
-
-extension Entry {
     func openEditor(_ editor: String, for entryType: EntryType) throws {
         let temporaryFilePath = unreleasedChangelogsDirectory
             .appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
@@ -135,6 +69,35 @@ extension Entry {
             print("Created changelog entry at \(uniqueFilepath) with text: \(entry.text) 🙌")
         } catch {
             Self.exit(withError: error)
+        }
+    }
+}
+
+enum EntryType: String, Codable, Comparable, ExpressibleByArgument {
+    static func < (lhs: EntryType, rhs: EntryType) -> Bool {
+        lhs.rawValue < rhs.rawValue
+    }
+    
+    case addition
+    case change
+    case fix
+}
+
+struct ChangelogEntry: Codable {
+    let type: EntryType
+    let text: String
+}
+
+enum ChangelogError: Error {
+    case noEntriesFound
+    case noTextEntered
+    
+    var localizedDescription: String {
+        switch self {
+        case .noEntriesFound:
+            return "No unreleased changelog entries were found."
+        case .noTextEntered:
+            return "The changelog entry was empty."
         }
     }
 }
