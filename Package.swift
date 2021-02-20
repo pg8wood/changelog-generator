@@ -5,6 +5,9 @@ import PackageDescription
 
 let package = Package(
     name: "changelog-generator",
+    platforms: [
+        .macOS(.v10_15)
+    ],
     products: [
         .executable(name: "changelog", targets: ["changelog-generator"])
     ],
