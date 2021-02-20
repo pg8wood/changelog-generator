@@ -13,13 +13,16 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser",
-                 from: "0.0.1")
+                 from: "0.0.1"),
+            .package(url: "https://github.com/apple/swift-tools-support-core",
+                     from: "0.2.0")
     ],
     targets: [
         .target(
             name: "changelog-generator",
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
+                .product(name: "SwiftToolsSupport", package: "swift-tools-support-core"),
             ]),
         .testTarget(
             name: "changelog-generatorTests",
