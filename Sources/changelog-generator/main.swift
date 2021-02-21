@@ -37,16 +37,19 @@ struct Log: ParsableCommand {
     var text: [String] = []
     
     func run() throws {
-        if !text.isEmpty {
-            let bullettedEntryText = text.map { entry in
-                "- \(entry)"
-            }.joined(separator: "\n")
-            
-            write(entryText: bullettedEntryText)
-            return
+        if text.isEmpty {
+            try openEditor(editor, for: entryType)
+        } else {
+            try createEntry(with: text)
         }
+    }
+    
+    private func createEntry(with text: [String]) throws {
+        let bullettedEntryText = text.map { entry in
+            "- \(entry)"
+        }.joined(separator: "\n")
         
-        try openEditor(editor, for: entryType)
+        try write(entryText: bullettedEntryText)
     }
     
     private func openEditor(_ editor: String, for entryType: EntryType) throws {
@@ -66,32 +69,29 @@ struct Log: ParsableCommand {
             let uncommentedLines = fileContents?.split(separator: "\n")
                 .filter { !$0.hasPrefix("<!--") && !$0.hasSuffix("-->") }
                 .joined(separator: "\n")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
             
             guard let enteredText = uncommentedLines,
                   !enteredText.isEmpty else {
                 throw ChangelogError.noTextEntered
             }
             
-            write(entryText: enteredText)
+            try write(entryText: enteredText)
         }
     }
     
-    private func write(entryText: String) {
-        do {
-            let entry = ChangelogEntry(type: entryType, text: entryText)
-            let uniqueFilepath = createUniqueChangelogFilepath()
-            let data = try JSONEncoder().encode(entry)
-            try data.write(to: uniqueFilepath)
-            
-            print("""
-                  🙌 Created changelog entry at \(uniqueFilepath.relativePath)
+    private func write(entryText: String) throws {
+        let entry = ChangelogEntry(type: entryType, text: entryText)
+        let uniqueFilepath = createUniqueChangelogFilepath()
+        let data = try JSONEncoder().encode(entry)
+        try data.write(to: uniqueFilepath)
+        
+        print("""
+             🙌 Created changelog entry at \(uniqueFilepath.relativePath)
 
-                 ### \(entryType.title)
-                 \(entry.text)
-                 """)
-        } catch {
-            Self.exit(withError: error)
-        }
+             ### \(entryType.title)
+             \(entry.text)
+             """)
     }
     
     private func createUniqueChangelogFilepath() -> Foundation.URL {
@@ -145,6 +145,8 @@ struct Publish: ParsableCommand {
         }
         
         try record(groupedEntries: groupedEntries, changelogFilePaths: changelogFilePaths)
+        
+        print("\nNice! CHANGELOG.md was updated. Congrats on the release 🥳🍻")
     }
     
     private func dryRun(with groupedEntries: [EntryType: [ChangelogEntry]], changelogFilePaths: [Foundation.URL]) throws {
