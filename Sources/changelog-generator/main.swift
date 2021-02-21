@@ -30,10 +30,11 @@ struct Log: ParsableCommand {
     @Option(name: .shortAndLong, help: "A terminal-based text editor executable in your $PATH used to write your changelog entry.")
     var editor: String = "vim"
     
-    @Argument(help: """
-                 A list of strings to be recorded as a bulletted changelog entry, skipping the interactive text editor.
-                 If the --text option is suplied, the --editor option is ignored and the changelog entry is created for you.
-                 """)
+    @Argument(help:
+        """
+         A list of strings to be recorded as a bulletted changelog entry, skipping the interactive text editor.
+         If the --text option is suplied, the --editor option is ignored and the changelog entry is created for you.
+        """)
     var text: [String] = []
     
     func run() throws {
@@ -49,23 +50,32 @@ struct Log: ParsableCommand {
         try openEditor(editor, for: entryType)
     }
     
-    func openEditor(_ editor: String, for entryType: EntryType) throws {
+    private func openEditor(_ editor: String, for entryType: EntryType) throws {
         let temporaryFilePath = unreleasedChangelogsDirectory
             .appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
+            .appendingPathExtension("md")
+        let hint = "<!-- Enter your changelog message below this line exactly how you want it to appear in the changelog. Lines surrounded in markdown (HTML) comments will be ignored.-->"
+        
+        try Data(hint.utf8)
+            .write(to: temporaryFilePath)
         
         try InteractiveCommandRunner.runCommand("\(editor) \(temporaryFilePath.path)") {
-            let handle = try FileHandle(forReadingFrom: temporaryFilePath)
+            let handle = try FileHandle(forUpdating: temporaryFilePath)
             let fileContents = String(data: handle.readDataToEndOfFile(), encoding: .utf8)
-            // TODO use DI file manager
-            try handle.close()
-            try FileManager.default.removeItem(at: temporaryFilePath)
             
-            guard let enteredText = fileContents,
+            try handle.close()
+            try FileManager.default.removeItem(at: temporaryFilePath) // TODO use DI file manager
+            
+            let uncommentedLines = fileContents?.split(separator: "\n")
+                .filter { !$0.hasPrefix("<!--") && !$0.hasSuffix("-->") }
+                .joined(separator: "\n")
+            
+            guard let enteredText = uncommentedLines,
                   !enteredText.isEmpty else {
                 throw ChangelogError.noTextEntered
             }
             
-            write(entryText: "\(enteredText.dropLast())")
+            write(entryText: enteredText)
         }
     }
     
