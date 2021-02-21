@@ -52,8 +52,6 @@ struct Log: ParsableCommand {
     func openEditor(_ editor: String, for entryType: EntryType) throws {
         let temporaryFilePath = unreleasedChangelogsDirectory
             .appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
-//        let data = Data("\(EntryType.added.rawValue)\n-".utf8)
-//        try data.write(to: uniqueFilepath)
         
         try InteractiveCommandRunner.runCommand("\(editor) \(temporaryFilePath.path)") {
             let handle = try FileHandle(forReadingFrom: temporaryFilePath)
@@ -65,7 +63,6 @@ struct Log: ParsableCommand {
             guard let enteredText = fileContents,
                   !enteredText.isEmpty else {
                 throw ChangelogError.noTextEntered
-                //            Added.exit(withError: ChangelogEntryError.noTextEntered)
             }
             
             write(entryText: "\(enteredText.dropLast())")
@@ -117,6 +114,7 @@ struct ChangelogEntry: Codable {
 enum ChangelogError: Error {
     case noEntriesFound
     case noTextEntered
+    case changelogNotFound
     
     var localizedDescription: String {
         switch self {
@@ -124,6 +122,8 @@ enum ChangelogError: Error {
             return "No unreleased changelog entries were found."
         case .noTextEntered:
             return "The changelog entry was empty."
+        case .changelogNotFound:
+            return "Couldn't find the changelog."
         }
     }
 }
@@ -137,7 +137,12 @@ struct Publish: ParsableCommand {
     var version: String
     
     // TODO: add date
-//    @Argument(help: "The date the version was published.")
+    @Argument(help: "A string representing the date the version was published. Format MM-dd-YYYY.")
+    var releaseDate: String = {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "MM-dd-YYYY"
+        return dateFormatter.string(from: Date())
+    }()
     
     func run() throws {
         // TODO: test
@@ -157,9 +162,7 @@ struct Publish: ParsableCommand {
             let groupedEntries: [EntryType: [ChangelogEntry]] = Dictionary(grouping: uncategorizedEntries, by: \.type)
             
             guard let changelog = FileHandle(forUpdatingAtPath: "CHANGELOG.md") else {
-                // TODO create it
-//                exit(1)
-                fatalError("Couldn't find the changelog!")
+                throw ChangelogError.changelogNotFound
             }
             
             let oldChangelogData = changelog.readDataToEndOfFile()
@@ -169,7 +172,7 @@ struct Publish: ParsableCommand {
             // TODO need to seek past comments first. Need an anchor or something to denote where our changelog header stops and the
             // actual changelog entries should be start
             
-            let versionHeader = "## [\(version)] - [TODO add date]"
+            let versionHeader = "## [\(version)] - \(releaseDate)"
             changelog.write(Data("\(versionHeader)".utf8))
             print("\n\(versionHeader)") // TODO write and log together?
             
@@ -190,13 +193,13 @@ struct Publish: ParsableCommand {
             // This just feels a bit bad. See if there's a cleaner way to do it
             changelog.write(oldChangelogData)
             changelog.closeFile()
-                        
+            
             try fileManager.contentsOfDirectory(at: unreleasedChangelogsDirectory, includingPropertiesForKeys: [], options: .skipsSubdirectoryDescendants)
                 // TODO enable dry run
-
-//                .forEach { url in
-//                    print("(dry run) would have deleted \(url.lastPathComponent)")
-//                }
+                
+                //                .forEach { url in
+                //                    print("(dry run) would have deleted \(url.lastPathComponent)")
+                //                }
                 .forEach(fileManager.removeItem(at:))
         } catch {
             Changelog.exit(withError: error)
