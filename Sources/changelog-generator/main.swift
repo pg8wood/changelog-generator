@@ -17,7 +17,8 @@ let unreleasedChangelogsDirectory = URL(fileURLWithPath: "changelogs/unreleased"
 struct Changelog: ParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Curbing Cumbersome Changelog Conflicts.",
-        subcommands: [Log.self, Publish.self])
+        subcommands: [Log.self, Publish.self],
+        defaultSubcommand: Log.self)
 }
 
 struct Log: ParsableCommand {
@@ -32,8 +33,9 @@ struct Log: ParsableCommand {
     
     @Argument(help:
         """
-         A list of strings to be recorded as a bulletted changelog entry, skipping the interactive text editor.
-         If the --text option is suplied, the --editor option is ignored and the changelog entry is created for you.
+        A list of strings separated by spaces to be recorded as a bulletted changelog entry, skipping the interactive text editor.
+        
+        If the --text option is suplied, the --editor option is ignored and the changelog entry is created for you.
         """)
     var text: [String] = []
     
@@ -87,7 +89,7 @@ struct Log: ParsableCommand {
             try data.write(to: uniqueFilepath)
             
             print("""
-                  🙌 Created changelog entry at \(uniqueFilepath.relativeString)
+                  🙌 Created changelog entry at \(uniqueFilepath.relativePath)
 
                  ### \(entryType.title)
                  \(entry.text)
@@ -141,7 +143,7 @@ enum ChangelogError: Error {
 // TODO: dry-run option
 struct Publish: ParsableCommand {
     static let configuration = CommandConfiguration(
-        abstract: "Collects the changes in \(unreleasedChangelogsDirectory) and adds them to CHANGELOG.md")
+        abstract: "Collects the changes in \(unreleasedChangelogsDirectory.relativePath) and prepends them to CHANGELOG.md as a new release version.")
     
     @Argument(help: "The version number associated with the changelog entries to be published.")
     var version: String
