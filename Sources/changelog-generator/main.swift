@@ -30,10 +30,22 @@ struct Log: ParsableCommand {
     @Option(name: .shortAndLong, help: "A terminal-based text editor executable in your $PATH used to write your changelog entry.")
     var editor: String = "vim"
     
-//    @Argument(help: "The changelog entry describing the change.")
-//    var entryText: String
+    @Argument(help: """
+                 A list of strings to be recorded as a bulletted changelog entry, skipping the interactive text editor.
+                 If the --text option is suplied, the --editor option is ignored and the changelog entry is created for you.
+                 """)
+    var text: [String] = []
     
     func run() throws {
+        if !text.isEmpty {
+            let bullettedEntryText = text.map { entry in
+                "- \(entry)"
+            }.joined(separator: "\n")
+            
+            write(entryText: bullettedEntryText)
+            return
+        }
+        
         try openEditor(editor, for: entryType)
     }
     
@@ -56,13 +68,13 @@ struct Log: ParsableCommand {
                 //            Added.exit(withError: ChangelogEntryError.noTextEntered)
             }
             
-            let changelogEntry = ChangelogEntry(type: entryType, text: enteredText)
-            write(entry: changelogEntry)
+            write(entryText: enteredText)
         }
     }
     
-    private func write(entry: ChangelogEntry) {
+    private func write(entryText: String) {
         do {
+            let entry = ChangelogEntry(type: entryType, text: entryText)
             let uniqueFilepath = unreleasedChangelogsDirectory.appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
             let data = try JSONEncoder().encode(entry)
             try data.write(to: uniqueFilepath)
@@ -81,6 +93,14 @@ enum EntryType: String, Codable, Comparable, ExpressibleByArgument {
     case addition
     case change
     case fix
+    
+    var title: String {
+        switch self {
+        case .addition: return "Added"
+        case .change: return "Changed"
+        case .fix: return "Fixed"
+        }
+    }
 }
 
 struct ChangelogEntry: Codable {
@@ -143,23 +163,23 @@ struct Publish: ParsableCommand {
             // TODO need to seek past comments first. Need an anchor or something to denote where our changelog header stops and the
             // actual changelog entries should be start
             
-            let versionHeader = "## [\(version)] - [TODO add date]\n\n"
+            let versionHeader = "## [\(version)] - [TODO add date]"
             changelog.write(Data("\(versionHeader)".utf8))
-            print(versionHeader.dropLast()) // TODO write and log together?
+            print("\n\(versionHeader)") // TODO write and log together?
             
             groupedEntries.keys.sorted().forEach { entryType in
-                let header = "### \(entryType.rawValue.localizedCapitalized)"
-                let headerData = Data("\(header)\n".utf8)
+                let header = "\n\n### \(entryType.title)"
+                let headerData = Data(header.utf8)
                 changelog.write(headerData)
-                print(header)
+                print(header.dropFirst())
                 
                 groupedEntries[entryType]?.forEach { entry in
-                    changelog.write(Data(entry.text.utf8))
+                    changelog.write(Data("\n\(entry.text)".utf8))
                     print(entry.text)
                 }
             }
             
-            changelog.write(Data("\n".utf8))
+            changelog.write(Data("\n\n".utf8))
             
             // This just feels a bit bad. See if there's a cleaner way to do it
             changelog.write(oldChangelogData)
