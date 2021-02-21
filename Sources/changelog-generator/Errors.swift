@@ -7,12 +7,12 @@
 
 import Foundation
 
-enum ChangelogError: Error {
+enum ChangelogError: LocalizedError {
     case noEntriesFound
     case noTextEntered
     case changelogNotFound
     
-    var localizedDescription: String {
+    var errorDescription: String? {
         switch self {
         case .noEntriesFound:
             return "No unreleased changelog entries were found."
