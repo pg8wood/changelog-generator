@@ -68,7 +68,7 @@ struct Log: ParsableCommand {
                 //            Added.exit(withError: ChangelogEntryError.noTextEntered)
             }
             
-            write(entryText: enteredText)
+            write(entryText: "\(enteredText.dropLast())")
         }
     }
     
@@ -78,7 +78,13 @@ struct Log: ParsableCommand {
             let uniqueFilepath = unreleasedChangelogsDirectory.appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
             let data = try JSONEncoder().encode(entry)
             try data.write(to: uniqueFilepath)
-            print("Created changelog entry at \(uniqueFilepath) with text: \(entry.text) 🙌")
+            
+            print("""
+                  🙌 Created changelog entry at \(uniqueFilepath.relativeString)
+
+                 ### \(entryType.title)
+                 \(entry.text)
+                 """)
         } catch {
             Self.exit(withError: error)
         }
