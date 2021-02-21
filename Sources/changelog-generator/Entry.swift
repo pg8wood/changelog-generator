@@ -14,6 +14,10 @@ struct ChangelogEntry: Codable {
 }
 
 enum EntryType: String, Codable, Comparable, ExpressibleByArgument, CaseIterable {
+    static var allCasesSentenceString: String {
+        allCases.map(\.rawValue).sentenceString
+    }
+    
     static func < (lhs: EntryType, rhs: EntryType) -> Bool {
         lhs.rawValue < rhs.rawValue
     }
@@ -28,5 +32,21 @@ enum EntryType: String, Codable, Comparable, ExpressibleByArgument, CaseIterable
         case .change: return "Changed"
         case .fix: return "Fixed"
         }
+    }
+    
+    init(_ string: String) throws {
+        guard let entryType = EntryType(rawValue: string) else {
+            throw ValidationError("Valid types are \(EntryType.allCasesSentenceString).")
+        }
+        
+        self = entryType
+    }
+}
+
+private extension BidirectionalCollection where Element: StringProtocol {
+    var sentenceString: String {
+        count <= 2 ?
+            joined(separator: " and ") :
+            dropLast().joined(separator: ", ") + ", and " + last!
     }
 }

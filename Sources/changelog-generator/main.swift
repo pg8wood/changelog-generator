@@ -24,7 +24,8 @@ struct Log: ParsableCommand {
     
     @Argument(help: ArgumentHelp(
                 "The type of changelog entry to create. ",
-                discussion: "Vaid entry types are \(EntryType.allCases.map{ $0.rawValue }.joined(separator: ", ")).\n"))
+                discussion: "Vaid entry types are \(EntryType.allCasesSentenceString).\n"),
+              transform: EntryType.init)
     var entryType: EntryType
     
     @Option(name: .shortAndLong, help: "A terminal-based text editor executable in your $PATH used to write your changelog entry with more precision than the default bulletted list of changes.")
