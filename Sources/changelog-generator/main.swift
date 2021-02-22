@@ -7,8 +7,10 @@
 
 import Foundation
 import ArgumentParser
-import TSCUtility
+import TSCBasic
 
+let outTerminalController = TerminalController(stream: stdoutStream)!
+let errorTerminalController = TerminalController(stream: stderrStream)!
 let unreleasedChangelogsDirectory = URL(fileURLWithPath: "changelogs/unreleased", isDirectory: true)
 
 struct Changelog: ParsableCommand {
@@ -25,10 +27,11 @@ struct Log: ParsableCommand {
     @Argument(help: ArgumentHelp(
                 "The type of changelog entry to create. ",
                 discussion: "Vaid entry types are \(EntryType.allCasesSentenceString).\n"),
-              transform: EntryType.init)
+                transform: EntryType.init)
     var entryType: EntryType
     
-    @Option(name: .shortAndLong, help: "A terminal-based text editor executable in your $PATH used to write your changelog entry with more precision than the default bulletted list of changes.")
+    @Option(name: .shortAndLong,
+            help: "A terminal-based text editor executable in your $PATH used to write your changelog entry with more precision than the default bulletted list of changes.")
     var editor: String = "vim"
     
     @Argument(help: ArgumentHelp(
@@ -86,12 +89,17 @@ struct Log: ParsableCommand {
         let data = try JSONEncoder().encode(entry)
         try data.write(to: uniqueFilepath)
         
-        print("""
-             🙌 Created changelog entry at \(uniqueFilepath.relativePath)
+        let filePathString = outTerminalController.wrap(uniqueFilepath.relativePath, inColor: .white, bold: true)
+        let successString = outTerminalController.wrap("🙌 Created changelog entry at \(filePathString)", inColor: .green, bold: true)
+                
+        outTerminalController.write(
+            """
 
-             ### \(entryType.title)
-             \(entry.text)
-             """)
+            ### \(entryType.title)
+            \(entry.text)
+
+            \(successString)
+            """, inColor: .cyan)
     }
     
     private func createUniqueChangelogFilepath() -> Foundation.URL {
@@ -139,30 +147,33 @@ struct Publish: ParsableCommand {
         
         let groupedEntries: [EntryType: [ChangelogEntry]] = Dictionary(grouping: uncategorizedEntries, by: \.type)
         
+        printChangelogSummary(groupedEntries: groupedEntries, changelogFilePaths: changelogFilePaths)
+        
         if dryRun {
-            try dryRun(with: groupedEntries, changelogFilePaths: changelogFilePaths)
+            outTerminalController.write("\n(Dry run) would have deleted \(changelogFilePaths.count) unreleased changelog entries.", inColor: .yellow)
             return
         }
         
         try record(groupedEntries: groupedEntries, changelogFilePaths: changelogFilePaths)
         
-        print("\nNice! CHANGELOG.md was updated. Congrats on the release 🥳🍻")
+        outTerminalController.write("\nNice! CHANGELOG.md was updated. Congrats on the release! 🥳🍻", inColor: .green)
     }
     
-    private func dryRun(with groupedEntries: [EntryType: [ChangelogEntry]], changelogFilePaths: [Foundation.URL]) throws {
-        let versionHeader = "## [\(version)] - \(releaseDate)"
-        print("\(versionHeader)", terminator: "")
-        
-        groupedEntries.keys.sorted().forEach { entryType in
-            let header = "\n\n### \(entryType.title)"
-            print(header.dropFirst())
+    private func printChangelogSummary(groupedEntries: [EntryType: [ChangelogEntry]], changelogFilePaths: [Foundation.URL]) {
+        let newChangelogString = groupedEntries.keys.sorted().reduce(into: "", { changelongString, entryType in
+            changelongString.append("\n### \(entryType.title)\n")
             
             groupedEntries[entryType]?.forEach { entry in
-                print(entry.text)
+                changelongString.append("\(entry.text)\n")
             }
-        }
+        })
         
-        print("\n(Dry run) would have deleted \(changelogFilePaths.count) unreleased changelog entries.")
+        outTerminalController.write(
+            """
+
+            ## [\(version)] - \(releaseDate)
+            \(newChangelogString)
+            """, inColor: .cyan)
     }
     
     private func record(groupedEntries: [EntryType: [ChangelogEntry]], changelogFilePaths: [Foundation.URL]) throws {
@@ -176,21 +187,16 @@ struct Publish: ParsableCommand {
         
         // TODO need to seek past comments first. Need an anchor or something to denote where our changelog header stops and the
         // actual changelog entries should be start
-        print()
-        
         let versionHeader = "## [\(version)] - \(releaseDate)"
         changelog.write(Data("\(versionHeader)".utf8))
-        print("\(versionHeader)", terminator: "")
         
         groupedEntries.keys.sorted().forEach { entryType in
             let header = "\n\n### \(entryType.title)"
             let headerData = Data(header.utf8)
             changelog.write(headerData)
-            print(header.dropFirst())
             
             groupedEntries[entryType]?.forEach { entry in
                 changelog.write(Data("\n\(entry.text)".utf8))
-                print(entry.text)
             }
         }
         
