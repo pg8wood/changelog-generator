@@ -11,25 +11,31 @@ import TSCBasic
 
 struct Publish: ParsableCommand {
     static let configuration = CommandConfiguration(
-        abstract: "Collects the changes in \(Configuration.unreleasedChangelogsDirectory.relativePath) and prepends them to CHANGELOG.md as a new release version.")
+        abstract: "Collects the changes in \(Configuration.unreleasedChangelogsDirectory.relativePath) and prepends them to the CHANGELOG as a new release version.")
+    
+    static func makeDefaultReleaseDateString() -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "MM-dd-YYYY"
+        return dateFormatter.string(from: Date())
+    }
     
     @Argument(help: "The version number associated with the changelog entries to be published.")
     var version: String
     
     // TODO: add date
     @Argument(help: "A string representing the date the version was published. Format MM-dd-YYYY.")
-    var releaseDate: String = {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "MM-dd-YYYY"
-        return dateFormatter.string(from: Date())
-    }()
+    var releaseDate: String = Publish.makeDefaultReleaseDateString()
     
-    @Flag(help: "Prints the changelog entries that would have been appended to CHANGELOG.md and doesn't delete any files in \(Configuration.unreleasedChangelogsDirectory.relativePath).")
+    @Flag(help: "Prints the changelog entries that would have been appended to the CHANGELOG and doesn't delete any files in \(Configuration.unreleasedChangelogsDirectory.relativePath).")
     var dryRun: Bool = false
+    
+    @Option(help: "The CHANGELOG file to which the unreleased changelog entries will be prepended.")
+    var changelogFilename: String = "CHANGELOG.md"
     
     private var fileManager: FileManager {
         Configuration.fileManager
     }
+    var unreleasedChangelogsDirectory: URL = Configuration.unreleasedChangelogsDirectory
     
     private var outTerminalController: TerminalController {
         Configuration.outTerminalController
@@ -41,7 +47,7 @@ struct Publish: ParsableCommand {
     
     func run() throws {
         let decoder = JSONDecoder()
-        let changelogFilePaths = try fileManager.contentsOfDirectory(at: Configuration.unreleasedChangelogsDirectory, includingPropertiesForKeys: nil)
+        let changelogFilePaths = try fileManager.contentsOfDirectory(at: unreleasedChangelogsDirectory, includingPropertiesForKeys: nil)
         let uncategorizedEntries = try changelogFilePaths.map {
             try decoder.decode(ChangelogEntry.self, from: Data(contentsOf: $0))
         }
@@ -61,7 +67,7 @@ struct Publish: ParsableCommand {
         
         try record(groupedEntries: groupedEntries, changelogFilePaths: changelogFilePaths)
         
-        outTerminalController.write("\nNice! CHANGELOG.md was updated. Congrats on the release! 🥳🍻", inColor: .green)
+        outTerminalController.write("\nNice! \(changelogFilename) was updated. Congrats on the release! 🥳🍻", inColor: .green)
     }
     
     private func printChangelogSummary(groupedEntries: [EntryType: [ChangelogEntry]], changelogFilePaths: [Foundation.URL]) {
@@ -82,7 +88,7 @@ struct Publish: ParsableCommand {
     }
     
     private func record(groupedEntries: [EntryType: [ChangelogEntry]], changelogFilePaths: [Foundation.URL]) throws {
-        guard let changelog = FileHandle(forUpdatingAtPath: "CHANGELOG.md") else {
+        guard let changelog = FileHandle(forUpdatingAtPath: changelogFilename) else {
             throw ChangelogError.changelogNotFound
         }
         

@@ -10,45 +10,30 @@ import class Foundation.Bundle
 import TSCBasic
 @testable import ChangelogCore
 
-class MockFileManager: FileManaging {
-    var contentsOfDirectoryHook: () -> [URL] = {[]}
-    var removeItemHook: () throws -> Void = { }
-    
-    func contentsOfDirectory(at: URL) throws -> [URL] {
-        contentsOfDirectoryHook()
-    }
-    
-    func removeItem(at: URL) throws {
-        try removeItemHook()
-    }
-}
-
 class LogCommandTests: XCTestCase {
-    var mockFileManager = MockFileManager()
-    
-    override func setUp() {
-        super.setUp()
-        mockFileManager = MockFileManager()
-    }
-    
     func test_givenNoChangelogDirectory_thenLogThrowsError() {
-        let logCommand = Log(fileManager: mockFileManager, text: ["Test entry"])
+        var logCommand = Log()
+        logCommand.entryType = .change
+        logCommand.text = ["Test entry"]
+        
         XCTAssertThrowsError(try logCommand.run()) { error in
             XCTAssertEqual((error as NSError).code, NSFileNoSuchFileError)
         }
     }
     
     func test_givenAdditionOption_whenTextIsValid_thenTextIsWrittenToDisk() {
-        let sampleAdditionText = "Test addition"
+        let sampleAdditionText = "Added an additive ability to add additions"
         
-        var logCommand = Log(entryType: .addition, fileManager: mockFileManager, text: [sampleAdditionText])
+        var logCommand = Log()
+        logCommand.entryType = .addition
+        logCommand.text = [sampleAdditionText]
         
         XCTAssertNoThrow(
             try withTemporaryDirectory { directory in
                 logCommand.unreleasedChangelogsDirectory = directory.asURL
                 try logCommand.run()
                 
-                let entryFile = try XCTUnwrap(try FileManager.default.contentsOfDirectory(at: directory.asURL).first)
+                let entryFile = try XCTUnwrap(try FileManager.default.contentsOfDirectory(at: directory.asURL, includingPropertiesForKeys: nil).first)
                 let entry = try JSONDecoder().decode(
                     ChangelogEntry.self,
                     from: Data(contentsOf: entryFile))
@@ -60,4 +45,35 @@ class LogCommandTests: XCTestCase {
             }
         )
     }
+    
+    func test_giveFixOption_whenMultipleEntriesAreProvided_thenBulletedTextIsWrittenToDisk() {
+        let sampleFixBullets = ["Fix-it Felix vs.", "Wreck-It Ralph"]
+        
+//        var logCommand = Log(entryType: .fix, text: sampleFixBullets)
+        var logCommand = Log()
+        logCommand.entryType = .fix
+        logCommand.text = sampleFixBullets
+        
+        XCTAssertNoThrow(
+            try withTemporaryDirectory { directory in
+                logCommand.unreleasedChangelogsDirectory = directory.asURL
+                try logCommand.run()
+                
+                let entryFile = try XCTUnwrap(try FileManager.default.contentsOfDirectory(at: directory.asURL, includingPropertiesForKeys: nil).first)
+                let entry = try JSONDecoder().decode(
+                    ChangelogEntry.self,
+                    from: Data(contentsOf: entryFile))
+                
+                let formattedSampleText =
+                    """
+                    - \(sampleFixBullets[0])
+                    - \(sampleFixBullets[1])
+                    """
+                
+                XCTAssertEqual(entry.type, .fix)
+                XCTAssertEqual(entry.text, formattedSampleText)
+            }
+        )
+    }
+
 }

@@ -32,7 +32,7 @@ public struct Log: ParsableCommand {
         Configuration.outTerminalController
     }
     
-    var fileManager: FileManaging = Configuration.fileManager
+    var fileManager: FileManager = Configuration.fileManager
     var unreleasedChangelogsDirectory: URL = Configuration.unreleasedChangelogsDirectory
     
     enum CodingKeys: String, CodingKey {
@@ -40,7 +40,6 @@ public struct Log: ParsableCommand {
     }
     
     public init() {}
-    
     
     public func run() throws {
         if text.isEmpty {
