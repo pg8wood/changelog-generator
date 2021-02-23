@@ -1,5 +1,6 @@
 import XCTest
 import class Foundation.Bundle
+@testable import ChangelogCore
 
 final class changelog_generatorTests: XCTestCase {
     func testExample() throws {
@@ -16,6 +17,7 @@ final class changelog_generatorTests: XCTestCase {
 
         let process = Process()
         process.executableURL = fooBinary
+        process.arguments = ["log", "addition", "test"]
 
         let pipe = Pipe()
         process.standardOutput = pipe

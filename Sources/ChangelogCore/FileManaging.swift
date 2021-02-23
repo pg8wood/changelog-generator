@@ -7,13 +7,13 @@
 
 import Foundation
 
-protocol FileManaging {
+public protocol FileManaging {
     func contentsOfDirectory(at: URL) throws -> [URL]
     func removeItem(at: Foundation.URL) throws
 }
 
 extension FileManager: FileManaging {
-    func contentsOfDirectory(at: URL) throws -> [URL] {
-        try contentsOfDirectory(at: unreleasedChangelogsDirectory, includingPropertiesForKeys: [], options: .skipsSubdirectoryDescendants)
+    public func contentsOfDirectory(at url: URL) throws -> [URL] {
+        try contentsOfDirectory(at: url, includingPropertiesForKeys: [], options: .skipsSubdirectoryDescendants)
     }
 }

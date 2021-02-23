@@ -8,6 +8,11 @@
 import Foundation
 
 enum InteractiveCommandRunner {
+    enum RunCommandError: Error {
+        case WaitPIDError
+        case POSIXSpawnError(Int32)
+    }
+    
     /// Runs an interactive command using `posix_spawn`. This is currently necessary due to a bug in [Process.standardInput](https://developer.apple.com/documentation/foundation/process/1411576-standardinput)
     /// that prevents child processes from inherting the parent process' stdin, despite the documentation claiming so.
     ///
@@ -36,10 +41,5 @@ enum InteractiveCommandRunner {
         let cStrings = strings.map { strdup($0) }
         try scoped(cStrings + [nil])
         cStrings.forEach { free($0) }
-    }
-    
-    enum RunCommandError: Error {
-        case WaitPIDError
-        case POSIXSpawnError(Int32)
     }
 }
