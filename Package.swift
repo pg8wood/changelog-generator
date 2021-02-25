@@ -16,12 +16,15 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-tools-support-core", from: "0.2.0")
     ],
     targets: [
-        .target(name: "ChangelogCore"),
+        .target(name: "ChangelogCore",
+                dependencies: [
+                    .product(name: "ArgumentParser", package: "swift-argument-parser"),
+                    .product(name: "SwiftToolsSupport", package: "swift-tools-support-core")
+                    
+                ]),
         .target(
             name: "changelog-generator",
             dependencies: [
-                .product(name: "ArgumentParser", package: "swift-argument-parser"),
-                .product(name: "SwiftToolsSupport", package: "swift-tools-support-core"),
                 "ChangelogCore"
             ]),
         .testTarget(
