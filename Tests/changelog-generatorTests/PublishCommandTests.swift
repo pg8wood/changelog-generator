@@ -13,22 +13,28 @@ import TSCBasic
 class PublishCommandTests: XCTestCase {
     
     func test_givenNoVersionArgument_thenThrowsError() {
-        XCTAssertThrowsError(try Publish().run())
+        var publishCommand = Publish()
+        publishCommand.options = Changelog.Options(unreleasedChangelogsDirectory: Changelog.Options.defaultUnreleasedChangelogDirectory)
+        
+        XCTAssertThrowsError(try publishCommand.run())
     }
     
     func test_givenValidCommand_whenChangelogDirectoryDoesntExist_thenThrowsError() {
         var publishCommand = Publish()
         publishCommand.version = "42"
-        
+        publishCommand.options = Changelog.Options(unreleasedChangelogsDirectory: Changelog.Options.defaultUnreleasedChangelogDirectory)
+
         XCTAssertThrowsError(try publishCommand.run())
     }
     
     func test_givenValidCommand_whenChangelogDirectoryIsEmpty_thenThrowsError() {
         var publishCommand = Publish()
         publishCommand.version = "42"
+        publishCommand.options = Changelog.Options()
         
         XCTAssertNoThrow(try withTemporaryDirectory { directory in
-            publishCommand.unreleasedChangelogsDirectory = directory.asURL
+            let changelogOptions = Changelog.Options(unreleasedChangelogsDirectory: directory.asURL)
+            publishCommand.options = changelogOptions
             
             XCTAssertThrowsError(try publishCommand.run()) { error in
                 XCTAssertEqual(error as? ChangelogError, .noEntriesFound)
@@ -43,9 +49,12 @@ class PublishCommandTests: XCTestCase {
                 var publishCommand = Publish()
                 publishCommand.version = "42"
                 publishCommand.releaseDate = Publish.makeDefaultReleaseDateString()
-                publishCommand.unreleasedChangelogsDirectory = directory.asURL
                 publishCommand.dryRun = false
                 publishCommand.changelogFilename = "CHANGELOG.md"
+                publishCommand.options = Changelog.Options(unreleasedChangelogsDirectory: Changelog.Options.defaultUnreleasedChangelogDirectory)
+
+                let changelogOptions = Changelog.Options(unreleasedChangelogsDirectory: directory.asURL)
+                publishCommand.options = changelogOptions
                 
                 XCTAssertThrowsError(try publishCommand.run()) { error in
                     XCTAssertEqual(error as? ChangelogError, .changelogNotFound)
@@ -63,9 +72,11 @@ class PublishCommandTests: XCTestCase {
                     var publishCommand = Publish()
                     publishCommand.version = "42"
                     publishCommand.releaseDate = Publish.makeDefaultReleaseDateString()
-                    publishCommand.unreleasedChangelogsDirectory = directory.asURL
                     publishCommand.dryRun = false
                     publishCommand.changelogFilename = changelogFile.path.pathString
+                    
+                    let changelogOptions = Changelog.Options(unreleasedChangelogsDirectory: directory.asURL)
+                    publishCommand.options = changelogOptions
                     
                     try publishCommand.run()
                     
@@ -93,9 +104,11 @@ class PublishCommandTests: XCTestCase {
                     var publishCommand = Publish()
                     publishCommand.version = "42"
                     publishCommand.releaseDate = Publish.makeDefaultReleaseDateString()
-                    publishCommand.unreleasedChangelogsDirectory = directory.asURL
                     publishCommand.dryRun = false
                     publishCommand.changelogFilename = changelogFile.path.pathString
+                    
+                    let changelogOptions = Changelog.Options(unreleasedChangelogsDirectory: directory.asURL)
+                    publishCommand.options = changelogOptions
                     
                     try publishCommand.run()
                     
@@ -118,9 +131,11 @@ class PublishCommandTests: XCTestCase {
                     var publishCommand = Publish()
                     publishCommand.version = "42"
                     publishCommand.releaseDate = Publish.makeDefaultReleaseDateString()
-                    publishCommand.unreleasedChangelogsDirectory = directory.asURL
                     publishCommand.dryRun = true
                     publishCommand.changelogFilename = changelogFile.path.pathString
+                    
+                    let changelogOptions = Changelog.Options(unreleasedChangelogsDirectory: directory.asURL)
+                    publishCommand.options = changelogOptions
                     
                     try publishCommand.run()
                     

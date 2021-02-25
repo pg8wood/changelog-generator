@@ -15,6 +15,7 @@ class LogCommandTests: XCTestCase {
         var logCommand = Log()
         logCommand.entryType = .change
         logCommand.text = ["Test entry"]
+        logCommand.options = Changelog.Options(unreleasedChangelogsDirectory: Changelog.Options.defaultUnreleasedChangelogDirectory)
         
         XCTAssertThrowsError(try logCommand.run()) { error in
             XCTAssertEqual((error as NSError).code, NSFileNoSuchFileError)
@@ -27,10 +28,13 @@ class LogCommandTests: XCTestCase {
         var logCommand = Log()
         logCommand.entryType = .addition
         logCommand.text = [sampleAdditionText]
+        logCommand.options = Changelog.Options(unreleasedChangelogsDirectory: Changelog.Options.defaultUnreleasedChangelogDirectory)
         
         XCTAssertNoThrow(
             try withTemporaryDirectory { directory in
-                logCommand.unreleasedChangelogsDirectory = directory.asURL
+                let changelogOptions = Changelog.Options(unreleasedChangelogsDirectory: directory.asURL)
+                logCommand.options = changelogOptions
+                
                 try logCommand.run()
                 
                 let entryFile = try XCTUnwrap(try FileManager.default.contentsOfDirectory(at: directory.asURL, includingPropertiesForKeys: nil).first)
@@ -55,7 +59,9 @@ class LogCommandTests: XCTestCase {
         
         XCTAssertNoThrow(
             try withTemporaryDirectory { directory in
-                logCommand.unreleasedChangelogsDirectory = directory.asURL
+                let changelogOptions = Changelog.Options(unreleasedChangelogsDirectory: directory.asURL)
+                logCommand.options = changelogOptions
+                
                 try logCommand.run()
                 
                 let entryFile = try XCTUnwrap(try FileManager.default.contentsOfDirectory(at: directory.asURL, includingPropertiesForKeys: nil).first)

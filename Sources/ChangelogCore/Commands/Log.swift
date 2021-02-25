@@ -12,6 +12,8 @@ public struct Log: ParsableCommand {
     public static let configuration = CommandConfiguration(
         abstract: "Create a new changelog entry.")
     
+    @OptionGroup var options: Changelog.Options
+    
     @Argument(help: ArgumentHelp(
                 "The type of changelog entry to create. ",
                 discussion: "Valid entry types are \(EntryType.allCasesSentenceString).\n"),
@@ -27,11 +29,13 @@ public struct Log: ParsableCommand {
                 discussion: "If <text> is supplied, the --editor option is ignored and the changelog entry is created for you without opening an interactive text editor."))
     var text: [String] = []
     
-    var fileManager: FileManager = Configuration.fileManager
-    var unreleasedChangelogsDirectory: URL = Configuration.unreleasedChangelogsDirectory
+    var unreleasedChangelogsDirectory: URL {
+        options.unreleasedChangelogsDirectory
+    }
+    var fileManager: FileManager = .default
     
     enum CodingKeys: String, CodingKey {
-        case entryType, editor, text
+        case options, entryType, editor, text
     }
     
     public init() {}
@@ -99,8 +103,8 @@ public struct Log: ParsableCommand {
             """, inColor: .cyan)
     }
     
-    private func createUniqueChangelogFilepath() -> Foundation.URL {
-        unreleasedChangelogsDirectory
+    private func createUniqueChangelogFilepath() -> URL {
+        options.unreleasedChangelogsDirectory
             .appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
             .appendingPathExtension("md")
     }

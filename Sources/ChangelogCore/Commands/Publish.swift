@@ -10,7 +10,7 @@ import ArgumentParser
 
 struct Publish: ParsableCommand {
     static let configuration = CommandConfiguration(
-        abstract: "Collects the changes in \(Configuration.unreleasedChangelogsDirectory.relativePath) and prepends them to the CHANGELOG as a new release version.")
+        abstract: "Collects the changes in \(Changelog.Options.defaultUnreleasedChangelogDirectory.relativePath) and prepends them to the CHANGELOG as a new release version.")
     
     static func makeDefaultReleaseDateString() -> String {
         let dateFormatter = DateFormatter()
@@ -18,26 +18,36 @@ struct Publish: ParsableCommand {
         return dateFormatter.string(from: Date())
     }
     
+    @OptionGroup var options: Changelog.Options
+    
     @Argument(help: "The version number associated with the changelog entries to be published.")
     var version: String
     
-    // TODO: add date
     @Argument(help: "A string representing the date the version was published. Format MM-dd-YYYY.")
     var releaseDate: String = Publish.makeDefaultReleaseDateString()
     
-    @Flag(help: "Prints the changelog entries that would have been appended to the CHANGELOG and doesn't delete any files in \(Configuration.unreleasedChangelogsDirectory.relativePath).")
+    @Flag(help: "Prints the changelog entries that would have been appended to the CHANGELOG and doesn't delete any files in \(Changelog.Options.defaultUnreleasedChangelogDirectory.relativePath).")
     var dryRun: Bool = false
     
     @Option(help: "The CHANGELOG file to which the unreleased changelog entries will be prepended.")
     var changelogFilename: String = "CHANGELOG.md"
     
-    private var fileManager: FileManager {
-        Configuration.fileManager
+    @Option(name: [.customShort("h"), .customLong("header", withSingleDash: false)],
+            help: ArgumentHelp(
+                "A Markdown file containing optional header text that will be prepended to your changelog.",
+                discussion: "If the supplied file does not exist or is not readable, no text will be prepended to the changelog.",
+                valueName: "path"),
+            transform: URL.init(fileURLWithPath:))
+    var changelogHeaderFileURL: URL = URL(fileURLWithPath: "changelogs/header.md")
+    
+    var unreleasedChangelogsDirectory: URL {
+        options.unreleasedChangelogsDirectory
     }
-    var unreleasedChangelogsDirectory: URL = Configuration.unreleasedChangelogsDirectory
+    
+    private var fileManager: FileManager = .default
     
     enum CodingKeys: String, CodingKey {
-        case version, releaseDate, dryRun, changelogFilename
+        case options, version, releaseDate, dryRun, changelogFilename, changelogHeaderFile
     }
     
     func run() throws {
@@ -65,7 +75,7 @@ struct Publish: ParsableCommand {
         OutputController.write("\nNice! \(changelogFilename) was updated. Congrats on the release! 🥳🍻", inColor: .green)
     }
     
-    private func printChangelogSummary(groupedEntries: [EntryType: [ChangelogEntry]], changelogFilePaths: [Foundation.URL]) {
+    private func printChangelogSummary(groupedEntries: [EntryType: [ChangelogEntry]], changelogFilePaths: [URL]) {
         let newChangelogString = groupedEntries.keys.sorted().reduce(into: "", { changelongString, entryType in
             changelongString.append("\n### \(entryType.title)\n")
             
@@ -82,7 +92,7 @@ struct Publish: ParsableCommand {
             """, inColor: .cyan)
     }
     
-    private func record(groupedEntries: [EntryType: [ChangelogEntry]], changelogFilePaths: [Foundation.URL]) throws {
+    private func record(groupedEntries: [EntryType: [ChangelogEntry]], changelogFilePaths: [URL]) throws {
         guard let changelog = FileHandle(forUpdatingAtPath: changelogFilename) else {
             throw ChangelogError.changelogNotFound
         }
