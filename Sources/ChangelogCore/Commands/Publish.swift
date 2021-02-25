@@ -7,7 +7,6 @@
 
 import Foundation
 import ArgumentParser
-import TSCBasic
 
 struct Publish: ParsableCommand {
     static let configuration = CommandConfiguration(
@@ -37,12 +36,8 @@ struct Publish: ParsableCommand {
     }
     var unreleasedChangelogsDirectory: URL = Configuration.unreleasedChangelogsDirectory
     
-    private var outTerminalController: TerminalController {
-        Configuration.outTerminalController
-    }
-    
     enum CodingKeys: String, CodingKey {
-        case version, releaseDate, dryRun
+        case version, releaseDate, dryRun, changelogFilename
     }
     
     func run() throws {
@@ -61,13 +56,13 @@ struct Publish: ParsableCommand {
         printChangelogSummary(groupedEntries: groupedEntries, changelogFilePaths: changelogFilePaths)
         
         if dryRun {
-            outTerminalController.write("\n(Dry run) would have deleted \(changelogFilePaths.count) unreleased changelog entries.", inColor: .yellow)
+            OutputController.write("\n(Dry run) would have deleted \(changelogFilePaths.count) unreleased changelog entries.", inColor: .yellow)
             return
         }
         
         try record(groupedEntries: groupedEntries, changelogFilePaths: changelogFilePaths)
         
-        outTerminalController.write("\nNice! \(changelogFilename) was updated. Congrats on the release! 🥳🍻", inColor: .green)
+        OutputController.write("\nNice! \(changelogFilename) was updated. Congrats on the release! 🥳🍻", inColor: .green)
     }
     
     private func printChangelogSummary(groupedEntries: [EntryType: [ChangelogEntry]], changelogFilePaths: [Foundation.URL]) {
@@ -79,7 +74,7 @@ struct Publish: ParsableCommand {
             }
         })
         
-        outTerminalController.write(
+        OutputController.write(
             """
 
             ## [\(version)] - \(releaseDate)

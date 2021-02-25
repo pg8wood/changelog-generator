@@ -7,7 +7,6 @@
 
 import Foundation
 import ArgumentParser
-import TSCBasic
 
 public struct Log: ParsableCommand {
     public static let configuration = CommandConfiguration(
@@ -27,10 +26,6 @@ public struct Log: ParsableCommand {
                 "A list of strings separated by spaces to be recorded as a bulleted changelog entry.",
                 discussion: "If <text> is supplied, the --editor option is ignored and the changelog entry is created for you without opening an interactive text editor."))
     var text: [String] = []
-    
-    private var outTerminalController: TerminalController {
-        Configuration.outTerminalController
-    }
     
     var fileManager: FileManager = Configuration.fileManager
     var unreleasedChangelogsDirectory: URL = Configuration.unreleasedChangelogsDirectory
@@ -91,10 +86,10 @@ public struct Log: ParsableCommand {
         let data = try JSONEncoder().encode(entry)
         try data.write(to: uniqueFilepath)
         
-        let filePathString = outTerminalController.wrap(uniqueFilepath.relativePath, inColor: .white, bold: true)
-        let successString = outTerminalController.wrap("🙌 Created changelog entry at \(filePathString)", inColor: .green, bold: true)
+        let filePathString = OutputController.tryWrap(uniqueFilepath.relativePath, inColor: .white, bold: true)
+        let successString = OutputController.tryWrap("🙌 Created changelog entry at \(filePathString)", inColor: .green, bold: true)
                 
-        outTerminalController.write(
+        OutputController.write(
             """
 
             ### \(entryType.title)

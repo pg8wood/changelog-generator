@@ -49,7 +49,6 @@ class LogCommandTests: XCTestCase {
     func test_giveFixOption_whenMultipleEntriesAreProvided_thenBulletedTextIsWrittenToDisk() {
         let sampleFixBullets = ["Fix-it Felix vs.", "Wreck-It Ralph"]
         
-//        var logCommand = Log(entryType: .fix, text: sampleFixBullets)
         var logCommand = Log()
         logCommand.entryType = .fix
         logCommand.text = sampleFixBullets

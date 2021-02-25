@@ -11,7 +11,6 @@ import TSCBasic
 
 public enum Configuration {
     public static var unreleasedChangelogsDirectory = URL(fileURLWithPath: "changelogs/unreleased", isDirectory: true)
-    public static var outTerminalController = TerminalController(stream: stdoutStream)!
     public static var fileManager = FileManager.default
 }
 
