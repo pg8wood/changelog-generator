@@ -19,7 +19,7 @@ let package = Package(
         .target(name: "ChangelogCore",
                 dependencies: [
                     .product(name: "ArgumentParser", package: "swift-argument-parser"),
-                    .product(name: "SwiftToolsSupport", package: "swift-tools-support-core")
+                    .product(name: "SwiftToolsSupport-auto", package: "swift-tools-support-core")
                     
                 ]),
         .target(
