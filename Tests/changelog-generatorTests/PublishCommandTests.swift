@@ -46,6 +46,8 @@ class PublishCommandTests: XCTestCase {
         XCTAssertNoThrow(try withTemporaryDirectory { directory in
             try withTemporaryChangelogEntry(dir: directory) { _ in
                 var publishCommand = Publish.makeCommandWithFakeCommandLineArguments()
+                publishCommand.changelogFilename = "FileThatDoesntExist"
+                
                 let changelogOptions = Changelog.Options(unreleasedChangelogsDirectory: directory.asURL)
                 publishCommand.options = changelogOptions
                 
