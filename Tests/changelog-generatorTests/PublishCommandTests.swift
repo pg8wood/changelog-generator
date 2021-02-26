@@ -68,13 +68,15 @@ class PublishCommandTests: XCTestCase {
                     let changelogOptions = Changelog.Options(unreleasedChangelogsDirectory: directory.asURL)
                     publishCommand.options = changelogOptions
                     
+                    let changelogEntryData = try Data(contentsOf: changelogEntry.path.asURL)
+                    let entry = try JSONDecoder().decode(ChangelogEntry.self, from: changelogEntryData)
+                    
                     try publishCommand.run()
                     
-                    let changelogEntryContent = try String(contentsOf: changelogFile.path.asURL)
                     let publishedChangelogContent = try String(contentsOf: changelogFile.path.asURL)
                     
                     XCTAssertFalse(publishedChangelogContent.isEmpty)
-                    XCTAssertTrue(publishedChangelogContent.contains(changelogEntryContent))
+                    XCTAssertTrue(publishedChangelogContent.contains(entry.text))
                 }
             }
         })
@@ -131,7 +133,42 @@ class PublishCommandTests: XCTestCase {
             }
         })
     }
-
+    
+    func test_givenValidCommand_whenChangelogHeaderExists_thenHeaderIsPrependedToChangelog() {
+        XCTAssertNoThrow(try withTemporaryDirectory { directory in
+            try withTemporaryChangelogEntry(dir: directory) { changelogEntry in
+                let absoluteChangelogPath = AbsolutePath(FileManager.default.currentDirectoryPath)
+                
+                try withTemporaryFile(dir: absoluteChangelogPath, prefix: "CHANGELOG", suffix: "md") { changelogFile in
+                    
+                    try withTemporaryFile { headerfile in
+                        let header =
+                            """
+                            # Now this is changelogging!
+                            ## Here's where the fun begins.
+                            """
+                        
+                        let headerData = Data(header.utf8)
+                        headerfile.fileHandle.write(headerData)
+                        
+                        var publishCommand = Publish.makeCommandWithFakeCommandLineArguments()
+                        publishCommand.changelogFilename = changelogFile.path.pathString
+                        publishCommand.changelogHeaderFileURL = headerfile.path.asURL
+                        
+                        let changelogOptions = Changelog.Options(unreleasedChangelogsDirectory: directory.asURL)
+                        publishCommand.options = changelogOptions
+                        
+                        try publishCommand.run()
+                        
+                        let publishedChangelogContent = try String(contentsOf: changelogFile.path.asURL)
+                        
+                        XCTAssertTrue(publishedChangelogContent.contains(header))
+                    }
+                }
+            }
+        })
+    }
+    
     
     private func withTemporaryChangelogEntry(dir directory: AbsolutePath?, _ body: (TemporaryFile) throws -> Void) throws {
         try withTemporaryFile(dir: directory, prefix: "fakeEntry", suffix: "md") { changelogEntryFile in
