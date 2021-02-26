@@ -45,14 +45,7 @@ class PublishCommandTests: XCTestCase {
     func test_givenValidCommand_whenChangelogsExistButNoChangelogFileExists_thenErrorIsThrown() {
         XCTAssertNoThrow(try withTemporaryDirectory { directory in
             try withTemporaryChangelogEntry(dir: directory) { _ in
-                
-                var publishCommand = Publish()
-                publishCommand.version = "42"
-                publishCommand.releaseDate = Publish.makeDefaultReleaseDateString()
-                publishCommand.dryRun = false
-                publishCommand.changelogFilename = "CHANGELOG.md"
-                publishCommand.options = Changelog.Options(unreleasedChangelogsDirectory: Changelog.Options.defaultUnreleasedChangelogDirectory)
-
+                var publishCommand = Publish.makeCommandWithFakeCommandLineArguments()
                 let changelogOptions = Changelog.Options(unreleasedChangelogsDirectory: directory.asURL)
                 publishCommand.options = changelogOptions
                 
@@ -69,10 +62,7 @@ class PublishCommandTests: XCTestCase {
                 let absoluteChangelogPath = AbsolutePath(FileManager.default.currentDirectoryPath)
                 
                 try withTemporaryFile(dir: absoluteChangelogPath, prefix: "CHANGELOG", suffix: "md") { changelogFile in
-                    var publishCommand = Publish()
-                    publishCommand.version = "42"
-                    publishCommand.releaseDate = Publish.makeDefaultReleaseDateString()
-                    publishCommand.dryRun = false
+                    var publishCommand = Publish.makeCommandWithFakeCommandLineArguments()
                     publishCommand.changelogFilename = changelogFile.path.pathString
                     
                     let changelogOptions = Changelog.Options(unreleasedChangelogsDirectory: directory.asURL)
@@ -101,10 +91,8 @@ class PublishCommandTests: XCTestCase {
                 let absoluteChangelogPath = AbsolutePath(FileManager.default.currentDirectoryPath)
                 
                 try withTemporaryFile(dir: absoluteChangelogPath, prefix: "CHANGELOG", suffix: "md") { changelogFile in
-                    var publishCommand = Publish()
-                    publishCommand.version = "42"
-                    publishCommand.releaseDate = Publish.makeDefaultReleaseDateString()
-                    publishCommand.dryRun = false
+                    var publishCommand = Publish.makeCommandWithFakeCommandLineArguments()
+                    
                     publishCommand.changelogFilename = changelogFile.path.pathString
                     
                     let changelogOptions = Changelog.Options(unreleasedChangelogsDirectory: directory.asURL)
@@ -128,9 +116,8 @@ class PublishCommandTests: XCTestCase {
                 let absoluteChangelogPath = AbsolutePath(FileManager.default.currentDirectoryPath)
                 
                 try withTemporaryFile(dir: absoluteChangelogPath, prefix: "CHANGELOG", suffix: "md") { changelogFile in
-                    var publishCommand = Publish()
-                    publishCommand.version = "42"
-                    publishCommand.releaseDate = Publish.makeDefaultReleaseDateString()
+                    var publishCommand = Publish.makeCommandWithFakeCommandLineArguments()
+                    
                     publishCommand.dryRun = true
                     publishCommand.changelogFilename = changelogFile.path.pathString
                     
@@ -154,5 +141,18 @@ class PublishCommandTests: XCTestCase {
             
             try body(changelogEntryFile)
         }
+    }
+}
+
+private extension Publish {
+    static func makeCommandWithFakeCommandLineArguments() -> Publish {
+        var publish = Publish()
+        publish.version = "42"
+        publish.releaseDate = Publish.makeDefaultReleaseDateString()
+        publish.dryRun = false
+        publish.changelogFilename = "CHANGELOG.md"
+        publish.changelogHeaderFileURL = URL(fileURLWithPath: "")
+        publish.options = Changelog.Options(unreleasedChangelogsDirectory: Changelog.Options.defaultUnreleasedChangelogDirectory)
+        return publish
     }
 }
