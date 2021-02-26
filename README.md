@@ -30,7 +30,7 @@ $ changelog log addition "I added something cool" "And something boring"
 ```
 
 #### Arguments
-```sh
+```
   <entry-type>            The type of changelog entry to create.  
         Valid entry types are addition, change, and fix.
 
@@ -39,14 +39,14 @@ $ changelog log addition "I added something cool" "And something boring"
 ```
 
 #### Options
-```sh
+```
   -d, --directory <path>  A directory where unpublished changelog entries will be written to / read from as Markdown files. (default: changelogs/unreleased/)
   -e, --editor <editor>   A terminal-based text editor executable in your $PATH used to write your changelog entry with more precision than the default bulleted list of changes. (default: vim)
   -h, --help              Show help information.
 ```
 
 ### Publish a Release
-```sh
+```
 $ changelog publish 1.0.1 
 
 ## [1.0.1] - 02-26-2021
@@ -59,19 +59,18 @@ Nice! CHANGELOG.md was updated. Congrats on the release! 🥳🍻
 ```
 
 #### Arguments
-```sh
+```
   <version>               The version number associated with the changelog entries to be published. 
-  <release-date>          A string representing the date the version was published. Format MM-dd-YYYY. (default: 02-26-2021)
-
+  <release-date>          A string representing the date the version was published. Format MM-dd-YYYY. (default: <today>)
 ```
 
 #### Options
-```sh
-  -d, --directory <path>  A directory where unpublished changelog entries will be written to / read from as Markdown files. (default: changelogs/unreleased/ -- file:///Users/patrickgatewood/Documents/changelog-generator/)
+```
+  -d, --directory <path>  A directory where unpublished changelog entries will be written to / read from as Markdown files. (default: changelogs/unreleased/)
   --dry-run               Prints the changelog entries that would have been appended to the CHANGELOG and doesn't delete any files in changelogs/unreleased. 
   --changelog-filename <changelog-filename>
                           The CHANGELOG file to which the unreleased changelog entries will be prepended. (default: CHANGELOG.md)
-  -h, --header <path>     A Markdown file containing optional header text that will be prepended to your changelog. (default: changelogs/header.md -- file:///Users/patrickgatewood/Documents/changelog-generator/)
+  -h, --header <path>     A Markdown file containing optional header text that will be prepended to your changelog. (default: changelogs/header.md)
         If the supplied file does not exist or is not readable, no text will be prepended to the changelog.
-  -h, --help              Show help information.
+  --help              Show help information.
 ```

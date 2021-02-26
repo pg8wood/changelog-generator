@@ -1,4 +1,4 @@
-name: Swift
+name: Test and Build Release
 
 on:
   push:
@@ -14,4 +14,4 @@ jobs:
     - name: Build release
       run: swift build --configuration release
       
-#     - name: Add to Changelog TODO dogfood changelog
+#     TODO dogfood changelog
