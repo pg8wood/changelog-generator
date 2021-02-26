@@ -104,6 +104,8 @@ struct Publish: ParsableCommand {
         
         try changelog.truncate(atOffset: 0) // delete old contents
         try changelog.seek(toOffset: 0)
+        
+        writeHeaderIfNeeded(to: changelog)
         changelog.write(Data("\(Publish.latestReleaseAnchor)\n".utf8))
         
         let versionHeader = "## [\(version)] - \(releaseDate)"
@@ -137,5 +139,14 @@ struct Publish: ParsableCommand {
         }
         
         return String(changelogEntries)
+    }
+    
+    private func writeHeaderIfNeeded(to changelog: FileHandle) {
+        guard let header = try? String(contentsOf: changelogHeaderFileURL) else {
+            OutputController.write("No changelog header was found; skipping...")
+            return
+        }
+        
+        changelog.write(Data("\(header)\n".utf8))
     }
 }
