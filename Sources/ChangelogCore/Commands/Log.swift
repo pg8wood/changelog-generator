@@ -8,7 +8,7 @@
 import Foundation
 import ArgumentParser
 
-public struct Log: ParsableCommand {
+struct Log: ParsableCommand {
     public static let configuration = CommandConfiguration(
         abstract: "Create a new changelog entry.")
     
@@ -37,8 +37,12 @@ public struct Log: ParsableCommand {
     enum CodingKeys: String, CodingKey {
         case options, entryType, editor, text
     }
-    
-    public init() {}
+        
+    func validate() throws {
+        guard text.first != "help" else {
+            throw ValidationError(#""help" isn't a valid changelog entry. Did you mean `changelog log --help`?"#)
+        }
+    }
     
     public func run() throws {
         if text.isEmpty {

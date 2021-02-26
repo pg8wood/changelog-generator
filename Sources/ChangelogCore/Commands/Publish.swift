@@ -53,6 +53,12 @@ struct Publish: ParsableCommand {
         case options, version, releaseDate, dryRun, changelogFilename, changelogHeaderFileURL
     }
     
+    func validate() throws {
+        guard version != "help" else {
+            throw ValidationError(#""help" isn't a valid version number. Did you mean `changelog publish --help`?"#)
+        }
+    }
+    
     func run() throws {
         let decoder = JSONDecoder()
         let changelogFilePaths = try fileManager.contentsOfDirectory(at: unreleasedChangelogsDirectory, includingPropertiesForKeys: nil)
