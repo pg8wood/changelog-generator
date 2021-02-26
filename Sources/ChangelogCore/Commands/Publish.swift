@@ -12,6 +12,9 @@ struct Publish: ParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Collects the changes in \(Changelog.Options.defaultUnreleasedChangelogDirectory.relativePath) and prepends them to the CHANGELOG as a new release version.")
     
+    /// A Markdown comment that helps the changelog parser find the end of the changelog's header and the beginning of its content
+    static let latestReleaseAnchor = "<!--Latest Release-->"
+    
     static func makeDefaultReleaseDateString() -> String {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "MM-dd-YYYY"
@@ -47,7 +50,7 @@ struct Publish: ParsableCommand {
     private var fileManager: FileManager = .default
     
     enum CodingKeys: String, CodingKey {
-        case options, version, releaseDate, dryRun, changelogFilename, changelogHeaderFile
+        case options, version, releaseDate, dryRun, changelogFilename, changelogHeaderFileURL
     }
     
     func run() throws {
@@ -97,12 +100,12 @@ struct Publish: ParsableCommand {
             throw ChangelogError.changelogNotFound
         }
         
-        let oldChangelogData = changelog.readDataToEndOfFile()
+        let oldChangelogContent = try fetchChangelogContentAfterHeader(from: changelog)
         
+        try changelog.truncate(atOffset: 0) // delete old contents
         try changelog.seek(toOffset: 0)
+        changelog.write(Data("\(Publish.latestReleaseAnchor)\n".utf8))
         
-        // TODO need to seek past comments first. Need an anchor or something to denote where our changelog header stops and the
-        // actual changelog entries should be start
         let versionHeader = "## [\(version)] - \(releaseDate)"
         changelog.write(Data("\(versionHeader)".utf8))
         
@@ -117,9 +120,22 @@ struct Publish: ParsableCommand {
         }
         
         changelog.write(Data("\n\n".utf8))
-        changelog.write(oldChangelogData)
+        changelog.write(Data(oldChangelogContent.utf8))
         changelog.closeFile()
         
         try changelogFilePaths.forEach(fileManager.removeItem(at:))
+    }
+    
+    private func fetchChangelogContentAfterHeader(from changelog: FileHandle) throws -> String {
+        let contents = String(data: changelog.readDataToEndOfFile(), encoding: .utf8)
+        guard let contentsStrippingHeader = contents?
+                .components(separatedBy: Publish.latestReleaseAnchor),
+              let changelogEntries = contentsStrippingHeader.last?
+                .dropFirst() // trim newline
+        else {
+            throw ChangelogError.changelogReleaseAnchorNotFound
+        }
+        
+        return String(changelogEntries)
     }
 }

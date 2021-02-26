@@ -11,6 +11,7 @@ enum ChangelogError: LocalizedError {
     case noEntriesFound
     case noTextEntered
     case changelogNotFound
+    case changelogReleaseAnchorNotFound
     
     var errorDescription: String? {
         switch self {
@@ -20,6 +21,9 @@ enum ChangelogError: LocalizedError {
             return "The changelog entry was empty."
         case .changelogNotFound:
             return "Couldn't find the changelog."
+        case .changelogReleaseAnchorNotFound:
+            // TODO: make bug report issue template and ask user to report the bug.
+            return #"The changelog did not contain a release anchor. This is necessary for the changelog parser to collect your past entries. Please add `\#(Publish.latestReleaseAnchor)` to the line before your latest changelog release."#
         }
     }
 }
