@@ -3,6 +3,9 @@
 
 A tool that creates changelog entries and stores them as unique files to avoid merge conflictss in version control. When it's time to release, `changelog publish` collects these files and appends them to your changelog file.
 
+## Why?
+Teams that keep an up-to-date changelog are often plagued by merge conflicts introduced by the `CHANGELOG` file. It was inspired by GitLab's [How we solved GitLab's CHANGELOG conflict crisis](https://about.gitlab.com/blog/2018/07/03/solving-gitlabs-changelog-conflict-crisis/) article and the `README` over at [KiloKilo/changelog](https://github.com/KiloKilo/changelog).
+
 ## Installation
 
 ### [Mint](https://github.com/yonaskolb/Mint) (system-wide installation)
