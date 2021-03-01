@@ -4,14 +4,14 @@ on:
   push:
     branches: [ main ]
 jobs:
+  build-release:
+     runs-on: macos-latest
+     steps:
+       - run: swift build --configuration release
+     
   test:
+    needs: build-release
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v2
     - name: Run tests
       run: swift test
-    
-    - name: Build release
-      run: swift build --configuration release
-      
-#     TODO dogfood changelog
