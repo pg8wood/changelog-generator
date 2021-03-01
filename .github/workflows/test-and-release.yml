@@ -4,7 +4,16 @@ on:
   push:
     branches: [ main ]
 jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+    - name: Check out repository code
+      uses: actions/checkout@v2
+    - name: Run tests
+      run: swift test
+      
   build-release:
+     needs: test
      runs-on: macos-latest
      steps:
        - name: Check out repository code
@@ -12,9 +21,4 @@ jobs:
        - name: Build release
          run: swift build --configuration release
      
-  test:
-    needs: build-release
-    runs-on: macos-latest
-    steps:
-    - name: Run tests
-      run: swift test
+  
