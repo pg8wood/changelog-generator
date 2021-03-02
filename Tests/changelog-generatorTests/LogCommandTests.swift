@@ -6,7 +6,6 @@
 //
 
 import XCTest
-import class Foundation.Bundle
 import TSCBasic
 @testable import ChangelogCore
 
@@ -22,63 +21,59 @@ class LogCommandTests: XCTestCase {
         }
     }
     
-    func test_givenAdditionOption_whenTextIsValid_thenTextIsWrittenToDisk() {
+    func test_givenAdditionOption_whenTextIsValid_thenTextIsWrittenToDisk() throws {
         let sampleAdditionText = "Added an additive ability to add additions"
         
         var logCommand = Log()
-        logCommand.entryType = .addition
+        logCommand.entryType = .add
         logCommand.text = [sampleAdditionText]
         logCommand.options = Changelog.Options(unreleasedChangelogsDirectory: Changelog.Options.defaultUnreleasedChangelogDirectory)
         
-        XCTAssertNoThrow(
-            try withTemporaryDirectory { directory in
-                let changelogOptions = Changelog.Options(unreleasedChangelogsDirectory: directory.asURL)
-                logCommand.options = changelogOptions
-                
-                try logCommand.run()
-                
-                let entryFile = try XCTUnwrap(try FileManager.default.contentsOfDirectory(at: directory.asURL, includingPropertiesForKeys: nil).first)
-                let entry = try JSONDecoder().decode(
-                    ChangelogEntry.self,
-                    from: Data(contentsOf: entryFile))
-                
-                let formattedSampleText = "- \(sampleAdditionText)"
-                                
-                XCTAssertEqual(entry.type, .addition)
-                XCTAssertEqual(entry.text, formattedSampleText)
-            }
-        )
+        try withTemporaryDirectory { directory in
+            let changelogOptions = Changelog.Options(unreleasedChangelogsDirectory: directory.asURL)
+            logCommand.options = changelogOptions
+            
+            try logCommand.run()
+            
+            let entryFile = try XCTUnwrap(try FileManager.default.contentsOfDirectory(at: directory.asURL, includingPropertiesForKeys: nil).first)
+            let entry = try JSONDecoder().decode(
+                ChangelogEntry.self,
+                from: Data(contentsOf: entryFile))
+            
+            let formattedSampleText = "- \(sampleAdditionText)"
+            
+            XCTAssertEqual(entry.type, .add)
+            XCTAssertEqual(entry.text, formattedSampleText)
+        }
     }
     
-    func test_giveFixOption_whenMultipleEntriesAreProvided_thenBulletedTextIsWrittenToDisk() {
+    func test_giveFixOption_whenMultipleEntriesAreProvided_thenBulletedTextIsWrittenToDisk() throws {
         let sampleFixBullets = ["Fix-it Felix vs.", "Wreck-It Ralph"]
         
         var logCommand = Log()
         logCommand.entryType = .fix
         logCommand.text = sampleFixBullets
         
-        XCTAssertNoThrow(
-            try withTemporaryDirectory { directory in
-                let changelogOptions = Changelog.Options(unreleasedChangelogsDirectory: directory.asURL)
-                logCommand.options = changelogOptions
-                
-                try logCommand.run()
-                
-                let entryFile = try XCTUnwrap(try FileManager.default.contentsOfDirectory(at: directory.asURL, includingPropertiesForKeys: nil).first)
-                let entry = try JSONDecoder().decode(
-                    ChangelogEntry.self,
-                    from: Data(contentsOf: entryFile))
-                
-                let formattedSampleText =
-                    """
+        try withTemporaryDirectory { directory in
+            let changelogOptions = Changelog.Options(unreleasedChangelogsDirectory: directory.asURL)
+            logCommand.options = changelogOptions
+            
+            try logCommand.run()
+            
+            let entryFile = try XCTUnwrap(try FileManager.default.contentsOfDirectory(at: directory.asURL, includingPropertiesForKeys: nil).first)
+            let entry = try JSONDecoder().decode(
+                ChangelogEntry.self,
+                from: Data(contentsOf: entryFile))
+            
+            let formattedSampleText =
+                """
                     - \(sampleFixBullets[0])
                     - \(sampleFixBullets[1])
                     """
-                
-                XCTAssertEqual(entry.type, .fix)
-                XCTAssertEqual(entry.text, formattedSampleText)
-            }
-        )
+            
+            XCTAssertEqual(entry.type, .fix)
+            XCTAssertEqual(entry.text, formattedSampleText)
+        }
     }
-
+    
 }

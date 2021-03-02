@@ -25,7 +25,7 @@ struct Log: ParsableCommand {
     var editor: String = "vim"
     
     @Argument(help: ArgumentHelp(
-                "A list of strings separated by spaces to be recorded as a bulleted changelog entry.",
+                "A list of quoted strings separated by spaces to be recorded as a bulleted changelog entry.",
                 discussion: "If <text> is supplied, the --editor option is ignored and the changelog entry is created for you without opening an interactive text editor."))
     var text: [String] = []
     
@@ -110,6 +110,6 @@ struct Log: ParsableCommand {
     private func createUniqueChangelogFilepath() -> URL {
         options.unreleasedChangelogsDirectory
             .appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
-            .appendingPathExtension("md")
+            .appendingPathExtension("json")
     }
 }

@@ -17,7 +17,7 @@ struct Publish: ParsableCommand {
     
     static func makeDefaultReleaseDateString() -> String {
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "MM-dd-YYYY"
+        dateFormatter.dateFormat = "MM-dd-yyyy"
         return dateFormatter.string(from: Date())
     }
     
@@ -26,7 +26,7 @@ struct Publish: ParsableCommand {
     @Argument(help: "The version number associated with the changelog entries to be published.")
     var version: String
     
-    @Argument(help: "A string representing the date the version was published. Format MM-dd-YYYY.")
+    @Argument(help: "A string representing the date the version was published. Format MM-dd-yyyy.")
     var releaseDate: String = Publish.makeDefaultReleaseDateString()
     
     @Flag(help: "Prints the changelog entries that would have been appended to the CHANGELOG and doesn't delete any files in \(Changelog.Options.defaultUnreleasedChangelogDirectory.relativePath).")

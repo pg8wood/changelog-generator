@@ -13,24 +13,34 @@ struct ChangelogEntry: Codable {
     let text: String
 }
 
+/// A type of changelog change as defined by Keep a Changelog 1.0.0.
+///
+/// https://keepachangelog.com/en/1.0.0/
 enum EntryType: String, Codable, Comparable, ExpressibleByArgument, CaseIterable {
     static var allCasesSentenceString: String {
-        allCases.map(\.rawValue).sentenceString
+        let names = allCases.map(\.rawValue)
+        return ListFormatter.localizedString(byJoining: names)
     }
     
     static func < (lhs: EntryType, rhs: EntryType) -> Bool {
         lhs.rawValue < rhs.rawValue
     }
     
-    case addition
+    case add
     case change
+    case deprecate
+    case remove
     case fix
+    case security
     
     var title: String {
         switch self {
-        case .addition: return "Added"
+        case .add: return "Added"
         case .change: return "Changed"
+        case .deprecate: return "Deprecated"
+        case .remove: return "Removed"
         case .fix: return "Fixed"
+        case .security: return "Security"
         }
     }
     
@@ -40,13 +50,5 @@ enum EntryType: String, Codable, Comparable, ExpressibleByArgument, CaseIterable
         }
         
         self = entryType
-    }
-}
-
-private extension BidirectionalCollection where Element: StringProtocol {
-    var sentenceString: String {
-        count <= 2 ?
-            joined(separator: " and ") :
-            dropLast().joined(separator: ", ") + ", and " + last!
     }
 }

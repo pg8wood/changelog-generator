@@ -26,7 +26,7 @@ extension Changelog {
         
         @Option(name: [.customShort("d"), .customLong("directory", withSingleDash: false)],
                 help: ArgumentHelp(
-                    "A directory where unpublished changelog entries will be written to / read from as Markdown files.",
+                    "A directory where unpublished changelog entries will be written to / read from.",
                     valueName: "path"),
                 transform: Options.makeDirectoryURL)
         var unreleasedChangelogsDirectory: URL = defaultUnreleasedChangelogDirectory
