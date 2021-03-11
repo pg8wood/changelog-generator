@@ -68,8 +68,7 @@ class PublishCommandTests: XCTestCase {
                     let changelogOptions = Changelog.Options(unreleasedChangelogsDirectory: directory.asURL)
                     publishCommand.options = changelogOptions
                     
-                    let changelogEntryData = try Data(contentsOf: changelogEntry.path.asURL)
-                    let entry = try JSONDecoder().decode(ChangelogEntry.self, from: changelogEntryData)
+                    let entry = try ChangelogEntry(contentsOf: changelogEntry.path.asURL)
                     
                     try publishCommand.run()
                     
@@ -169,12 +168,14 @@ class PublishCommandTests: XCTestCase {
         }
     }
     
-    
     private func withTemporaryChangelogEntry(dir directory: AbsolutePath?, _ body: (TemporaryFile) throws -> Void) throws {
         try withTemporaryFile(dir: directory, prefix: "fakeEntry", suffix: "md") { changelogEntryFile in
-            let changelogEntry = ChangelogEntry(type: .add, text: "Added temporarily")
-            let changelogEntryData = try JSONEncoder().encode(changelogEntry)
-            changelogEntryFile.fileHandle.write(changelogEntryData)
+            let entryContent = """
+            ### Added
+            - Added temporarily
+            """
+            
+            changelogEntryFile.fileHandle.write(Data(entryContent.utf8))
             
             try body(changelogEntryFile)
         }

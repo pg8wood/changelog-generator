@@ -8,11 +8,17 @@ Teams that keep an up-to-date changelog are often plagued by merge conflicts int
 
 ## Installation
 
-### [Mint](https://github.com/yonaskolb/Mint) (system-wide installation)
+### [Mint](https://github.com/yonaskolb/Mint)
 
 
 ```sh
 $ mint install pg8wood/changelog-generator
+```
+
+### Manual Installation
+```sh
+$ swift build -c release
+$ cp -f .build/release/changelog /usr/local/bin/changelog
 ```
 
 ## Usage
@@ -23,7 +29,7 @@ To view all the available options, run `$ changelog help`
 Changelog entries may be added interactively with your favorite text editor, or quick entries can be passed as command-line arguments.
 
 ```sh
-$ changelog log addition "I added something cool" "And something boring"
+$ changelog add "I added something cool" "And something boring"
 
 ### Added
 - I added something cool
@@ -34,17 +40,18 @@ $ changelog log addition "I added something cool" "And something boring"
 
 #### Arguments
 ```
-  <entry-type>            The type of changelog entry to create.  
-        Valid entry types are addition, change, and fix.
+  <entry-type> The type of changelog entry to create.  
+               Valid entry types are add, change, deprecate, remove, fix, and security.
 
-  <text>                  A list of strings separated by spaces to be recorded as a bulleted changelog entry. 
-        If <text> is supplied, the --editor option is ignored and the changelog entry is created for you without opening an interactive text editor.
+  <text> A list of quoted strings separated by spaces to be recorded as a bulleted changelog entry. 
+         If <text> is supplied, the --editor option is ignored and the changelog entry is created for you without opening an interactive text editor.
 ```
 
 #### Options
 ```
   -d, --directory <path>  A directory where unpublished changelog entries will be written to / read from as Markdown files. (default: changelogs/unreleased/)
   -e, --editor <editor>   A terminal-based text editor executable in your $PATH used to write your changelog entry with more precision than the default bulleted list of changes. (default: vim)
+  --version               Show the version.
   -h, --help              Show help information.
 ```
 
@@ -52,7 +59,7 @@ $ changelog log addition "I added something cool" "And something boring"
 ```
 $ changelog publish 1.0.1 
 
-## [1.0.1] - 02-26-2021
+## [1.0.1] - <release-date>
 
 ### Added
 - help
@@ -63,8 +70,8 @@ Nice! CHANGELOG.md was updated. Congrats on the release! 🥳🍻
 
 #### Arguments
 ```
-  <version>               The version number associated with the changelog entries to be published. 
-  <release-date>          A string representing the date the version was published. Format MM-dd-YYYY. (default: <today>)
+  <version> The version number associated with the changelog entries to be published. 
+  <release-date> A string representing the date the version was published. Format MM-dd-yyyy. (default: <today>)
 ```
 
 #### Options

@@ -8,12 +8,30 @@
 import Foundation
 import ArgumentParser
 
-struct ChangelogEntry: Codable {
+struct ChangelogEntry {
     let type: EntryType
     let text: String
+    
+    init(type: EntryType, text: String) {
+        self.type = type
+        self.text = text
+    }
+    
+    init(contentsOf fileURL: URL) throws {
+        let fileContents = try String(contentsOf: fileURL)
+        var lines = fileContents.components(separatedBy: .newlines)
+        let header = lines.removeFirst()
+        
+        guard let type = EntryType(title: header.components(separatedBy: .whitespaces).last) else {
+            throw ChangelogError.malformattedEntry(atPath: fileURL.path)
+        }
+        
+        self.type = type
+        text = lines.joined(separator: "\n")
+    }
 }
 
-/// A type of changelog change as defined by Keep a Changelog 1.0.0.
+/// A type of changelog change as defined by Keep a Changelog.
 ///
 /// https://keepachangelog.com/en/1.0.0/
 enum EntryType: String, Codable, Comparable, ExpressibleByArgument, CaseIterable {
@@ -34,19 +52,31 @@ enum EntryType: String, Codable, Comparable, ExpressibleByArgument, CaseIterable
     case security
     
     var title: String {
-        switch self {
-        case .add: return "Added"
-        case .change: return "Changed"
-        case .deprecate: return "Deprecated"
-        case .remove: return "Removed"
-        case .fix: return "Fixed"
-        case .security: return "Security"
-        }
+        EntryType.titles[self]!
     }
+    
+    private static let titles: [EntryType: String] = [
+        .add: "Added",
+        .change: "Changed",
+        .deprecate: "Deprecated",
+        .remove: "Removed",
+        .fix: "Fixed",
+        .security: "Security"
+    ]
+    private static var titlesToValues = Dictionary(uniqueKeysWithValues: titles.map({ ($1, $0) }))
     
     init(_ string: String) throws {
         guard let entryType = EntryType(rawValue: string) else {
             throw ValidationError("Valid types are \(EntryType.allCasesSentenceString).")
+        }
+        
+        self = entryType
+    }
+    
+    init?(title: String?) {
+        guard let title = title,
+              let entryType = EntryType.titlesToValues[title] else {
+            return nil
         }
         
         self = entryType

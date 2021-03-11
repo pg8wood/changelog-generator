@@ -12,6 +12,7 @@ public struct Changelog: ParsableCommand {
     public static let configuration = CommandConfiguration(
         abstract: "Curbing Cumbersome Changelog Conflicts.",
         discussion: "Creates changelog entries and stores them as single files to avoid merge conflictss in version control. When it's time to release, `changelog publish` collects these files and appends them to your changelog file.",
+        version: "0.2.0",
         subcommands: [Log.self, Publish.self],
         defaultSubcommand: Log.self)
     

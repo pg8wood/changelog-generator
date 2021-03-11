@@ -45,6 +45,10 @@ struct Log: ParsableCommand {
     }
     
     public func run() throws {
+        guard fileManager.fileExists(atPath: options.unreleasedChangelogsDirectory.path) else {
+            throw ChangelogError.changelogDirectoryNotFound(expectedPath: options.unreleasedChangelogsDirectory.relativeString)
+        }
+        
         if text.isEmpty {
             try openEditor(editor, for: entryType)
         } else {
@@ -61,9 +65,11 @@ struct Log: ParsableCommand {
     }
     
     private func openEditor(_ editor: String, for entryType: EntryType) throws {
-        let temporaryFilePath = createUniqueChangelogFilepath()
-        let hint = "<!-- Enter your changelog message below this line exactly how you want it to appear in the changelog. Lines surrounded in markdown (HTML) comments will be ignored.-->"
+        let temporaryFilePath = options.unreleasedChangelogsDirectory
+            .appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
+            .appendingPathExtension("md")
         
+        let hint = "<!-- Enter your changelog message below this line exactly how you want it to appear in the changelog. Lines surrounded in markdown (HTML) comments will be ignored.-->"
         try Data(hint.utf8)
             .write(to: temporaryFilePath)
         
@@ -89,27 +95,25 @@ struct Log: ParsableCommand {
     }
     
     private func write(entryText: String) throws {
-        let entry = ChangelogEntry(type: entryType, text: entryText)
-        let uniqueFilepath = createUniqueChangelogFilepath()
-        let data = try JSONEncoder().encode(entry)
-        try data.write(to: uniqueFilepath)
+        let uniqueFilepath = options.unreleasedChangelogsDirectory
+            .appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
+            .appendingPathExtension("md")
+        
+        let entry = """
+            ### \(entryType.title)
+            \(entryText)
+
+            """
+        
+        try entry.write(toFile: uniqueFilepath.path, atomically: true, encoding: .utf8)
         
         let filePathString = OutputController.tryWrap(uniqueFilepath.relativePath, inColor: .white, bold: true)
         let successString = OutputController.tryWrap("🙌 Created changelog entry at \(filePathString)", inColor: .green, bold: true)
                 
-        OutputController.write(
-            """
+        OutputController.write("""
 
-            ### \(entryType.title)
-            \(entry.text)
-
+            \(entry)
             \(successString)
             """, inColor: .cyan)
-    }
-    
-    private func createUniqueChangelogFilepath() -> URL {
-        options.unreleasedChangelogsDirectory
-            .appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
-            .appendingPathExtension("json")
     }
 }

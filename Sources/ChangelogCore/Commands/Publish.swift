@@ -60,11 +60,8 @@ struct Publish: ParsableCommand {
     }
     
     func run() throws {
-        let decoder = JSONDecoder()
         let changelogFilePaths = try fileManager.contentsOfDirectory(at: unreleasedChangelogsDirectory, includingPropertiesForKeys: nil)
-        let uncategorizedEntries = try changelogFilePaths.map {
-            try decoder.decode(ChangelogEntry.self, from: Data(contentsOf: $0))
-        }
+        let uncategorizedEntries = try changelogFilePaths.map(ChangelogEntry.init(contentsOf:))
         
         guard !uncategorizedEntries.isEmpty else {
             throw ChangelogError.noEntriesFound
@@ -75,7 +72,8 @@ struct Publish: ParsableCommand {
         printChangelogSummary(groupedEntries: groupedEntries, changelogFilePaths: changelogFilePaths)
         
         if dryRun {
-            OutputController.write("\n(Dry run) would have deleted \(changelogFilePaths.count) unreleased changelog entries.", inColor: .yellow)
+            let entryNoun = changelogFilePaths.count == 1 ? "entry" : "entries"
+            OutputController.write("\n(Dry run) would have deleted \(changelogFilePaths.count) unreleased changelog \(entryNoun).", inColor: .yellow)
             return
         }
         
@@ -89,7 +87,7 @@ struct Publish: ParsableCommand {
             changelongString.append("\n### \(entryType.title)\n")
             
             groupedEntries[entryType]?.forEach { entry in
-                changelongString.append("\(entry.text)\n")
+                changelongString.append("\(entry.text)")
             }
         })
         
@@ -123,7 +121,7 @@ struct Publish: ParsableCommand {
             changelog.write(headerData)
             
             groupedEntries[entryType]?.forEach { entry in
-                changelog.write(Data("\n\(entry.text)".utf8))
+                changelog.write(Data("\n\(entry.text.trimmingCharacters(in: .newlines))".utf8))
             }
         }
         

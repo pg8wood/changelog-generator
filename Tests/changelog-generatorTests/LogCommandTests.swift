@@ -17,7 +17,11 @@ class LogCommandTests: XCTestCase {
         logCommand.options = Changelog.Options(unreleasedChangelogsDirectory: Changelog.Options.defaultUnreleasedChangelogDirectory)
         
         XCTAssertThrowsError(try logCommand.run()) { error in
-            XCTAssertEqual((error as NSError).code, NSFileNoSuchFileError)
+            guard let changelogError = error as? ChangelogError,
+                  case .changelogDirectoryNotFound(_) = changelogError else {
+                XCTFail("Expected ChangelogError.changelogDirectoryNotFound to be thrown")
+                return
+            }
         }
     }
     
@@ -36,11 +40,9 @@ class LogCommandTests: XCTestCase {
             try logCommand.run()
             
             let entryFile = try XCTUnwrap(try FileManager.default.contentsOfDirectory(at: directory.asURL, includingPropertiesForKeys: nil).first)
-            let entry = try JSONDecoder().decode(
-                ChangelogEntry.self,
-                from: Data(contentsOf: entryFile))
+            let entry = try ChangelogEntry(contentsOf: entryFile)
             
-            let formattedSampleText = "- \(sampleAdditionText)"
+            let formattedSampleText = "- \(sampleAdditionText)\n"
             
             XCTAssertEqual(entry.type, .add)
             XCTAssertEqual(entry.text, formattedSampleText)
@@ -61,15 +63,14 @@ class LogCommandTests: XCTestCase {
             try logCommand.run()
             
             let entryFile = try XCTUnwrap(try FileManager.default.contentsOfDirectory(at: directory.asURL, includingPropertiesForKeys: nil).first)
-            let entry = try JSONDecoder().decode(
-                ChangelogEntry.self,
-                from: Data(contentsOf: entryFile))
+            let entry = try ChangelogEntry(contentsOf: entryFile)
             
             let formattedSampleText =
                 """
-                    - \(sampleFixBullets[0])
-                    - \(sampleFixBullets[1])
-                    """
+                - \(sampleFixBullets[0])
+                - \(sampleFixBullets[1])
+
+                """
             
             XCTAssertEqual(entry.type, .fix)
             XCTAssertEqual(entry.text, formattedSampleText)
