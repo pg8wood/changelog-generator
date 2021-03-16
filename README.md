@@ -34,10 +34,10 @@ To view all the available options, run `$ changelog help`
 Changelog entries may be added interactively with your favorite text editor, or quick entries can be passed as command-line arguments.
 
 ```sh
-$ changelog add "I added something cool" "And something boring"
+$ changelog add "Add something cool" "And something boring"
 
 ### Added
-- I added something cool
+- Add something cool
 - And something boring
 
 🙌 Created changelog entry at changelogs/unreleased/<uniqueFilename>.md
@@ -62,13 +62,19 @@ $ changelog add "I added something cool" "And something boring"
 
 ### Publish a Release
 ```
-$ changelog publish 1.0.1 
+$ changelog publish 1.0.0
 
-## [1.0.1] - <release-date>
+## [1.0.0] - <release-date>
 
 ### Added
-- help
-- I added something cool
+- Add something cool
+- And something boring
+
+### Changed
+- Start following [Semantic Versioning](https://semver.org) properly 
+
+### Fixed
+- Fix all of <guy who used to work here>'s bugs
 
 Nice! CHANGELOG.md was updated. Congrats on the release! 🥳🍻
 ```
