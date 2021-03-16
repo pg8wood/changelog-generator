@@ -1,7 +1,7 @@
 # changelog-generator
 > Curbing Cumbersome Changelog Conflicts
 
-A tool that creates changelog entries and stores them as unique files to avoid merge conflicts in version control. When it's time to release, `changelog publish` collects these files and appends them to your changelog file.
+A tool that creates changelog entries and stores them as unique files to avoid merge conflicts in version control. When it's time to release, `changelog publish` collects these files and appends them to your changelog file using a format based on [Keep a Changelog 1.0.0](https://keepachangelog.com/en/1.0.0/).
 
 ## Why?
 Teams that keep an up-to-date changelog are often plagued by merge conflicts introduced by the `CHANGELOG` file. This tool was inspired by GitLab's [How we solved GitLab's CHANGELOG conflict crisis](https://about.gitlab.com/blog/2018/07/03/solving-gitlabs-changelog-conflict-crisis/) article and the `README` over at [KiloKilo/changelog](https://github.com/KiloKilo/changelog).
@@ -19,6 +19,12 @@ $ mint install pg8wood/changelog-generator
 $ swift build -c release
 $ cp -f .build/release/changelog /usr/local/bin/changelog
 ```
+
+## Setup
+1. Create a directory in your project in which to store your unreleased changelog entries. By default, the tool looks in `./changelogs/unreleased`. This may be changed with the `--directory <path>` option.
+2. Create your changelog file if it doesn't exist. By default, the tool looks for `CHANGELOG.md`. Use the `--changelog-filename <path>` option to customize.
+3. Add `<!--Latest Release-->` to the top of your changelog file. This anchor helps the tool parse previous releases when using the `publish` subcommand. It is not rendered by Markdown viewers. See [this project's changelog](https://github.com/pg8wood/changelog-generator/blob/main/CHANGELOG.md) for an example.
+4. If you'd like your changelog to contain a header before latest release, create `changelogs/header.md` (or use a custom markdown file and specify the `--header <path>` option) and add your header text as Markdown. This project's [changelog header](https://github.com/pg8wood/changelog-generator/blob/main/changelogs/header.md) is prepended to the [changelog](https://github.com/pg8wood/changelog-generator/blob/main/CHANGELOG.md) with each release.
 
 ## Usage
 ### Help
