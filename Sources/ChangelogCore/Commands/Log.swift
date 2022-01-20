@@ -36,16 +36,13 @@ struct Log: ParsableCommand {
     // Due to the way the Argument Parser initializes its types, we can't
     // easily inject a ParsableCommand's dependencies. Instead, we can
     // set defaults and change them at runtime if needed.
-    var fileManager: FileManager = .default
+    // See: https://github.com/apple/swift-argument-parser/issues/359#issuecomment-991336822
+    var fileManager: FileManaging = FileManager.default
     var outputController: OutputControlling = OutputController()
-    var prompter: PromptProtocol?
+    lazy var prompt: PromptProtocol = Prompt(outputController: outputController)
     
     enum CodingKeys: String, CodingKey {
         case options, entryType, editor, text
-    }
-    
-    init() {
-        prompter = Prompt(outputController: outputController)
     }
     
     func validate() throws {
@@ -54,13 +51,13 @@ struct Log: ParsableCommand {
         }
     }
     
-    public func run() throws {
+    public mutating func run() throws {
         let changelogPath = options.unreleasedChangelogsDirectory.path
         
         if !fileManager.fileExists(atPath: changelogPath) {
-            let directoryCreationPrompt = "The `\(changelogPath)` directory does not exist. Would you like to create it? [Y|n]"
+            let directoryCreationPrompt = "The `\(changelogPath)` directory does not exist. Would you like to create it? [y|N]"
             
-            let userConfirmation: Confirmation? = try prompter?.promptUser(with: directoryCreationPrompt)
+            let userConfirmation: Confirmation? = try prompt.promptUser(with: directoryCreationPrompt)
             
             guard userConfirmation?.value == true else {
                 outputController.write("Abort mission! Bailing without creating a new changelog directory.")
@@ -140,5 +137,16 @@ struct Log: ParsableCommand {
             \(entry)
             \(successString)
             """, inColor: .cyan)
+    }
+}
+
+/// https://github.com/apple/swift-argument-parser/issues/359#issuecomment-991336822
+extension Log {
+    init(
+        fileManager: FileManaging,
+        prompt: PromptProtocol
+    ) {
+        self.fileManager = fileManager
+        self.prompt = prompt
     }
 }

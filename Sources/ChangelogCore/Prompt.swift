@@ -19,7 +19,7 @@ struct Prompt: PromptProtocol {
         var userInput: String?
         
         repeat {
-            outputController.write(prompt)
+            outputController.write("\(prompt)\n")
             userInput = readLine()
         } while userInput == nil
         
