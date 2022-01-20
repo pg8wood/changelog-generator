@@ -8,8 +8,19 @@
 import Foundation
 import TSCBasic
 
-enum OutputController {
-    static func write(_ text: String, inColor color: TerminalController.Color = .noColor) {
+protocol OutputControlling {
+    func write(_ text: String, inColor color: TerminalController.Color)
+    func tryWrap(_ text: String, inColor color: TerminalController.Color, bold: Bool) -> String
+}
+
+extension OutputControlling {
+    func write(_ text: String) {
+        write(text, inColor: .noColor)
+    }
+}
+
+struct OutputController: OutputControlling {
+    func write(_ text: String, inColor color: TerminalController.Color) {
         guard let outTerminalController = TerminalController(stream: stdoutStream) else {
             print(text)
             return
@@ -18,7 +29,7 @@ enum OutputController {
         outTerminalController.write(text, inColor: color)
     }
     
-    static func tryWrap(_ text: String, inColor color: TerminalController.Color, bold: Bool) -> String {
+    func tryWrap(_ text: String, inColor color: TerminalController.Color, bold: Bool) -> String {
         guard let outTerminalController = TerminalController(stream: stdoutStream) else {
             return text
         }

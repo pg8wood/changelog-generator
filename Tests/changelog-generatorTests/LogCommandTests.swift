@@ -10,21 +10,6 @@ import TSCBasic
 @testable import ChangelogCore
 
 class LogCommandTests: XCTestCase {
-    func test_givenNoChangelogDirectory_thenLogThrowsError() {
-        var logCommand = Log()
-        logCommand.entryType = .change
-        logCommand.text = ["Test entry"]
-        logCommand.options = Changelog.Options(unreleasedChangelogsDirectory: Changelog.Options.defaultUnreleasedChangelogDirectory)
-        
-        XCTAssertThrowsError(try logCommand.run()) { error in
-            guard let changelogError = error as? ChangelogError,
-                  case .changelogDirectoryNotFound(_) = changelogError else {
-                XCTFail("Expected ChangelogError.changelogDirectoryNotFound to be thrown")
-                return
-            }
-        }
-    }
-    
     func test_givenAdditionOption_whenTextIsValid_thenTextIsWrittenToDisk() throws {
         let sampleAdditionText = "Added an additive ability to add additions"
         

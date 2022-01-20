@@ -48,6 +48,7 @@ struct Publish: ParsableCommand {
     }
     
     private var fileManager: FileManager = .default
+    var outputController: OutputControlling = OutputController()
     
     enum CodingKeys: String, CodingKey {
         case options, version, releaseDate, dryRun, changelogFilename, changelogHeaderFileURL
@@ -73,13 +74,13 @@ struct Publish: ParsableCommand {
         
         if dryRun {
             let entryNoun = changelogFilePaths.count == 1 ? "entry" : "entries"
-            OutputController.write("\n(Dry run) would have deleted \(changelogFilePaths.count) unreleased changelog \(entryNoun).", inColor: .yellow)
+            outputController.write("\n(Dry run) would have deleted \(changelogFilePaths.count) unreleased changelog \(entryNoun).", inColor: .yellow)
             return
         }
         
         try record(groupedEntries: groupedEntries, changelogFilePaths: changelogFilePaths)
         
-        OutputController.write("\nNice! \(changelogFilename) was updated. Congrats on the release! 🥳🍻", inColor: .green)
+        outputController.write("\nNice! \(changelogFilename) was updated. Congrats on the release! 🥳🍻", inColor: .green)
     }
     
     private func printChangelogSummary(groupedEntries: [EntryType: [ChangelogEntry]], changelogFilePaths: [URL]) {
@@ -91,7 +92,7 @@ struct Publish: ParsableCommand {
             }
         })
         
-        OutputController.write(
+        outputController.write(
             """
 
             ## [\(version)] - \(releaseDate)
@@ -147,7 +148,7 @@ struct Publish: ParsableCommand {
     
     private func writeHeaderIfNeeded(to changelog: FileHandle) {
         guard let header = try? String(contentsOf: changelogHeaderFileURL) else {
-            OutputController.write("No changelog header was found; skipping...")
+            outputController.write("No changelog header was found; skipping...")
             return
         }
         

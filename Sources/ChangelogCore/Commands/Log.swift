@@ -32,12 +32,22 @@ struct Log: ParsableCommand {
     var unreleasedChangelogsDirectory: URL {
         options.unreleasedChangelogsDirectory
     }
+    
+    // Due to the way the Argument Parser initializes its types, we can't
+    // easily inject a ParsableCommand's dependencies. Instead, we can
+    // set defaults and change them at runtime if needed.
     var fileManager: FileManager = .default
+    var outputController: OutputControlling = OutputController()
+    var prompter: PromptProtocol?
     
     enum CodingKeys: String, CodingKey {
         case options, entryType, editor, text
     }
-        
+    
+    init() {
+        prompter = Prompt(outputController: outputController)
+    }
+    
     func validate() throws {
         guard text.first != "help" else {
             throw ValidationError(#""help" isn't a valid changelog entry. Did you mean `changelog log --help`?"#)
@@ -45,8 +55,22 @@ struct Log: ParsableCommand {
     }
     
     public func run() throws {
-        guard fileManager.fileExists(atPath: options.unreleasedChangelogsDirectory.path) else {
-            throw ChangelogError.changelogDirectoryNotFound(expectedPath: options.unreleasedChangelogsDirectory.relativeString)
+        let changelogPath = options.unreleasedChangelogsDirectory.path
+        
+        if !fileManager.fileExists(atPath: changelogPath) {
+            let directoryCreationPrompt = "The `\(changelogPath)` directory does not exist. Would you like to create it? [Y|n]"
+            
+            let userConfirmation: Confirmation? = try prompter?.promptUser(with: directoryCreationPrompt)
+            
+            guard userConfirmation?.value == true else {
+                outputController.write("Abort mission! Bailing without creating a new changelog directory.")
+                return
+            }
+            
+            try fileManager.createDirectory(
+                at: options.unreleasedChangelogsDirectory,
+                withIntermediateDirectories: true, attributes: nil
+            )
         }
         
         if text.isEmpty {
@@ -55,6 +79,7 @@ struct Log: ParsableCommand {
             try createEntry(with: text)
         }
     }
+    
     
     private func createEntry(with text: [String]) throws {
         let bulletedEntryText = text.map { entry in
@@ -107,10 +132,10 @@ struct Log: ParsableCommand {
         
         try entry.write(toFile: uniqueFilepath.path, atomically: true, encoding: .utf8)
         
-        let filePathString = OutputController.tryWrap(uniqueFilepath.relativePath, inColor: .white, bold: true)
-        let successString = OutputController.tryWrap("🙌 Created changelog entry at \(filePathString)", inColor: .green, bold: true)
+        let filePathString = outputController.tryWrap(uniqueFilepath.relativePath, inColor: .white, bold: true)
+        let successString = outputController.tryWrap("🙌 Created changelog entry at \(filePathString)", inColor: .green, bold: true)
                 
-        OutputController.write("""
+        outputController.write("""
 
             \(entry)
             \(successString)
