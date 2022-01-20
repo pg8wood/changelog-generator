@@ -33,9 +33,10 @@ struct Log: ParsableCommand {
         options.unreleasedChangelogsDirectory
     }
     
-    // Due to the way the Argument Parser initializes its types, we can't
-    // easily inject a ParsableCommand's dependencies. Instead, we can
-    // set defaults and change them at runtime if needed.
+    // Due to the way the ArgumentParser initializes its types, we can't easily inject a
+    // ParsableCommand's dependencies when this type is initialized by the ArgumentParser. Instead,
+    // we can set defaults and change them at runtime if needed. BUT, if we're creating the command
+    // ourselves, we can depdencency-inject and enable testability with an extension 🥳
     // See: https://github.com/apple/swift-argument-parser/issues/359#issuecomment-991336822
     var fileManager: FileManaging = FileManager.default
     var outputController: OutputControlling = OutputController()
@@ -55,19 +56,7 @@ struct Log: ParsableCommand {
         let changelogPath = options.unreleasedChangelogsDirectory.path
         
         if !fileManager.fileExists(atPath: changelogPath) {
-            let directoryCreationPrompt = "The `\(changelogPath)` directory does not exist. Would you like to create it? [y|N]"
-            
-            let userConfirmation: Confirmation? = try prompt.promptUser(with: directoryCreationPrompt)
-            
-            guard userConfirmation?.value == true else {
-                outputController.write("Abort mission! Bailing without creating a new changelog directory.")
-                return
-            }
-            
-            try fileManager.createDirectory(
-                at: options.unreleasedChangelogsDirectory,
-                withIntermediateDirectories: true, attributes: nil
-            )
+            try createChangelogDirectoryIfNeeded(path: changelogPath)
         }
         
         if text.isEmpty {
@@ -77,6 +66,19 @@ struct Log: ParsableCommand {
         }
     }
     
+    private mutating func createChangelogDirectoryIfNeeded(path: String) throws {
+        let directoryCreationPrompt = "The `\(path)` directory does not exist. Would you like to create it? [y|N]"
+        let userConfirmation: Confirmation = try prompt.promptUser(with: directoryCreationPrompt)
+        
+        guard userConfirmation.value else {
+            throw ChangelogError.changelogDirectoryNotFound(expectedPath: path)
+        }
+        
+        try fileManager.createDirectory(
+            at: options.unreleasedChangelogsDirectory,
+            withIntermediateDirectories: true, attributes: nil
+        )
+    }
     
     private func createEntry(with text: [String]) throws {
         let bulletedEntryText = text.map { entry in
@@ -137,16 +139,5 @@ struct Log: ParsableCommand {
             \(entry)
             \(successString)
             """, inColor: .cyan)
-    }
-}
-
-/// https://github.com/apple/swift-argument-parser/issues/359#issuecomment-991336822
-extension Log {
-    init(
-        fileManager: FileManaging,
-        prompt: PromptProtocol
-    ) {
-        self.fileManager = fileManager
-        self.prompt = prompt
     }
 }

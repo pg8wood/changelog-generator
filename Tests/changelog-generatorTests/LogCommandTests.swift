@@ -138,5 +138,16 @@ class LogCommandTests: XCTestCase {
             XCTAssertEqual(entry.text, formattedSampleText)
         }
     }
-    
+}
+
+/// https://github.com/apple/swift-argument-parser/issues/359#issuecomment-991336822
+private extension Log {
+    init(
+        fileManager: FileManaging,
+        prompt: PromptProtocol
+    ) {
+        self.init()
+        self.fileManager = fileManager
+        self.prompt = prompt
+    }
 }
