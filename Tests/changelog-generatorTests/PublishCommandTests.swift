@@ -9,27 +9,26 @@ import XCTest
 import TSCBasic
 @testable import ChangelogCore
 
-class PublishCommandTests: XCTestCase {
+class PublishCommandTests: ChangelogTestCase {
     func test_givenValidCommand_whenChangelogDirectoryDoesntExist_thenThrowsError() {
-        var publishCommand = Publish.makeCommandWithFakeCommandLineArguments()
-        publishCommand.version = "42"
-        publishCommand.options = Changelog.Options(unreleasedChangelogsDirectory: Changelog.Options.defaultUnreleasedChangelogDirectory)
+        let publishCommand = Publish(fileManager: mockFileManager)
+        
+        mockFileManager.contentsOfDirectoryHook = { _, _, _ in
+            throw MockFileError.fileNotFound
+        }
         
         XCTAssertThrowsError(try publishCommand.run())
     }
     
     func test_givenValidCommand_whenChangelogDirectoryIsEmpty_thenThrowsError() throws {
-        var publishCommand = Publish()
-        publishCommand.version = "42"
-        publishCommand.options = Changelog.Options()
+        let publishCommand = Publish(fileManager: mockFileManager)
         
-        try withTemporaryDirectory { directory in
-            let changelogOptions = Changelog.Options(unreleasedChangelogsDirectory: directory.asURL)
-            publishCommand.options = changelogOptions
-            
-            XCTAssertThrowsError(try publishCommand.run()) { error in
-                XCTAssertEqual(error as? ChangelogError, .noEntriesFound)
-            }
+        mockFileManager.contentsOfDirectoryHook = { _, _, _ in
+            return []
+        }
+
+        XCTAssertThrowsError(try publishCommand.run()) { error in
+            XCTAssertEqual(error as? ChangelogError, .noEntriesFound)
         }
     }
     
@@ -176,6 +175,18 @@ class PublishCommandTests: XCTestCase {
 }
 
 private extension Publish {
+    
+    init(fileManager: FileManaging) {
+        self.init()
+        self.fileManager = fileManager
+        self.version = "42"
+        self.releaseDate = Publish.makeDefaultReleaseDateString()
+        self.dryRun = false
+        self.changelogFilename = "CHANGELOG.md"
+        self.changelogHeaderFileURL = URL(fileURLWithPath: "")
+        self.options = Changelog.Options(unreleasedChangelogsDirectory: Changelog.Options.defaultUnreleasedChangelogDirectory)
+    }
+    
     static func makeCommandWithFakeCommandLineArguments() -> Publish {
         var publish = Publish()
         publish.version = "42"

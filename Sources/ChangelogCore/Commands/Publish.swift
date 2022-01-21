@@ -47,7 +47,12 @@ struct Publish: ParsableCommand {
         options.unreleasedChangelogsDirectory
     }
     
-    private var fileManager: FileManaging = FileManager.default
+    // Due to the way the ArgumentParser initializes its types, we can't easily inject a
+    // ParsableCommand's dependencies when this type is initialized by the ArgumentParser. Instead,
+    // we can set defaults and change them at runtime if needed. BUT, if we're creating the command
+    // ourselves, we can depdencency-inject and enable testability with an extension 🥳
+    // See: https://github.com/apple/swift-argument-parser/issues/359#issuecomment-991336822
+    var fileManager: FileManaging = FileManager.default
     var outputController: OutputControlling = OutputController()
     
     enum CodingKeys: String, CodingKey {

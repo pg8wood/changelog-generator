@@ -8,18 +8,7 @@
 import XCTest
 @testable import ChangelogCore
 
-class LogCommandTests: XCTestCase {
-    var mockDiskWriter = MockDiskWriter()
-    var mockPrompt = MockPrompt<Confirmation>()
-    var mockFileManager = MockFileManager()
-    
-    override func setUp() {
-        super.setUp()
-        mockDiskWriter = MockDiskWriter()
-        mockFileManager = MockFileManager()
-        mockPrompt = MockPrompt<Confirmation>()
-    }
-    
+class LogCommandTests: ChangelogTestCase {
     func test_givenChangelogDirectoryDoesNotExist_whenPromptIsConfirmed_thenCreateChangelogDirectory() throws {
         mockPrompt.mockPromptResponse = try Confirmation.parse(["y"])
         

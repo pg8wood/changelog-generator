@@ -8,6 +8,10 @@
 import Foundation
 @testable import ChangelogCore
 
+enum MockFileError: Error {
+    case fileNotFound
+}
+
 struct MockFileManager: FileManaging {
     var removeItemHook: ((URL) throws -> Void ) = { _ in }
     var fileExistsHook: ((String) -> Bool) = { _ in true }
