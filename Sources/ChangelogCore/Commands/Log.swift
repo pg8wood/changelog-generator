@@ -139,14 +139,14 @@ struct Log: ParsableCommand {
     
     private func slugFilepath(for entryText: String) -> URL {
         let entryPrefix = entryText
-            .components(separatedBy: " ")
-            .prefix(6)
-            .map { $0.trimmingCharacters(in: .alphanumerics.inverted) }
+            .components(separatedBy: .alphanumerics.inverted)
+            .filter { !$0.isEmpty }
+            .prefix(3)
             .joined(separator: "_")
         let slugs = entryType.title
-            .appending(entryPrefix)
+            .appending("_\(entryPrefix)")
             .localizedLowercase
-        let uniqueIdentifier = ProcessInfo.processInfo.globallyUniqueString
+        let uniqueIdentifier = UUID().uuidString
         let slugFilepath = options.unreleasedChangelogsDirectory
             .appendingPathComponent("\(slugs)_\(uniqueIdentifier)")
             .appendingPathExtension("md")
