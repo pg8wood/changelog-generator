@@ -6,9 +6,31 @@
 //
 
 import XCTest
+import ArgumentParser
 @testable import ChangelogCore
 
 class LogCommandTests: ChangelogTestCase {
+    func test_givenInvalidArguments_thenThrowValidationError() {
+        var logCommand = Log(
+            diskWriter: mockDiskWriter,
+            fileManager: mockFileManager,
+            prompt: mockPrompt
+        )
+        logCommand.text = ["help"]
+        
+        do {
+            try logCommand.validate()
+            XCTFail("Validation error should be thrown")
+        } catch {
+            switch error {
+            case is ValidationError:
+                break
+            default:
+                XCTFail("Wrong error type")
+            }
+        }
+    }
+    
     func test_givenChangelogDirectoryDoesNotExist_whenPromptIsConfirmed_thenCreateChangelogDirectory() throws {
         mockPrompt.mockPromptResponse = try Confirmation.parse(["y"])
         

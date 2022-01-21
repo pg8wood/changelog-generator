@@ -119,19 +119,15 @@ struct Log: ParsableCommand {
     }
     
     private func write(entryText: String) throws {
-        let uniqueFilepath = options.unreleasedChangelogsDirectory
-            .appendingPathComponent(ProcessInfo.processInfo.globallyUniqueString)
-            .appendingPathExtension("md")
-        
         let entry = """
             ### \(entryType.title)
             \(entryText)
 
             """
+        let slugFilepath = slugFilepath(for: entryText)
+        try diskWriter.write(entry, toFile: slugFilepath.path)
         
-        try diskWriter.write(entry, toFile: uniqueFilepath.path)
-        
-        let filePathString = outputController.tryWrap(uniqueFilepath.relativePath, inColor: .white, bold: true)
+        let filePathString = outputController.tryWrap(slugFilepath.relativePath, inColor: .white, bold: true)
         let successString = outputController.tryWrap("🙌 Created changelog entry at \(filePathString)", inColor: .green, bold: true)
                 
         outputController.write("""
@@ -139,5 +135,21 @@ struct Log: ParsableCommand {
             \(entry)
             \(successString)
             """, inColor: .cyan)
+    }
+    
+    private func slugFilepath(for entryText: String) -> URL {
+        let entryPrefix = entryText
+            .components(separatedBy: .alphanumerics.inverted)
+            .filter { !$0.isEmpty }
+            .prefix(3)
+            .joined(separator: "_")
+        let slugs = entryType.title
+            .appending("_\(entryPrefix)")
+            .localizedLowercase
+        let uniqueIdentifier = UUID().uuidString
+        let slugFilepath = options.unreleasedChangelogsDirectory
+            .appendingPathComponent("\(slugs)_\(uniqueIdentifier)")
+            .appendingPathExtension("md")
+        return slugFilepath
     }
 }
