@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > This file is generated. To add a new changelog entry, run the `changelog` tool. For more info, run `changelog help`.
 
 <!--Latest Release-->
+## [1.0.0] - 01-21-2022
+
+### Added
+- [Ask to create default files if they don't exist](https://github.com/pg8wood/changelog-generator/issues/1)
+
+### Changed
+- [Slug changelog filenames](https://github.com/pg8wood/changelog-generator/issues/4)
+
+### Fixed
+- [`changelogs/unreleased` directory is removed by git after publishing a release](https://github.com/pg8wood/changelog-generator/issues/3)
+
 ## [0.2.0] - 03-11-2021
 
 ### Added
@@ -37,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Add `help`, `log`, and `publish` commands
     - Set up unit test suite
 
+[1.0.0]: https://github.com/pg8wood/changelog-generator/compare/0.2.0...1.0.0
 [0.2.0]: https://github.com/pg8wood/changelog-generator/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/pg8wood/changelog-generator/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/pg8wood/changelog-generator/releases/tag/0.1.0
