@@ -7,22 +7,84 @@
 
 import XCTest
 import TSCBasic
+import ArgumentParser
 @testable import ChangelogCore
 
 class LogCommandTests: XCTestCase {
-    func test_givenNoChangelogDirectory_thenLogThrowsError() {
-        var logCommand = Log()
-        logCommand.entryType = .change
-        logCommand.text = ["Test entry"]
+    func test_givenChangelogDirectoryDoesNotExist_whenPromptIsConfirmed_thenCreateChangelogDirectory() throws {
+        var mockPrompt = MockPrompt<Confirmation>()
+        mockPrompt.mockPromptResponse = try Confirmation.parse(["y"])
+        
+        var mockFileManager = MockFileManager()
+        mockFileManager.fileExistsHook = { _ in false }
+        let expectation = expectation(description: "Directory created")
+        mockFileManager.createDirectoryHook = { _, _, _ in
+            expectation.fulfill()
+        }
+        
+        var logCommand = Log(fileManager: mockFileManager, prompt: mockPrompt)
+        logCommand.entryType = .add
+        logCommand.text = ["not used in this test but must be initialized to satisfy the ArgumentParser"]
         logCommand.options = Changelog.Options(unreleasedChangelogsDirectory: Changelog.Options.defaultUnreleasedChangelogDirectory)
         
-        XCTAssertThrowsError(try logCommand.run()) { error in
-            guard let changelogError = error as? ChangelogError,
-                  case .changelogDirectoryNotFound(_) = changelogError else {
-                XCTFail("Expected ChangelogError.changelogDirectoryNotFound to be thrown")
-                return
-            }
+        // This will swallow other errors thrown by the Log command, but these cases are handled by
+        // the rest of the test suite. In the future, String.write() should be wrapped and mocked
+        // in order to make this test better
+        try? logCommand.run()
+        
+        waitForExpectations(timeout: 0.1)
+    }
+    
+    func test_givenChangelogDirectoryDoesNotExist_whenPromptIsDenied_thenDoNotCreateChangelogDirectory() throws {
+        var mockPrompt = MockPrompt<Confirmation>()
+        mockPrompt.mockPromptResponse = try Confirmation.parse(["n"])
+        
+        var mockFileManager = MockFileManager()
+        mockFileManager.fileExistsHook = { _ in false }
+        
+        let expectation = expectation(description: "Directory should not be created")
+        expectation.isInverted = true
+        mockFileManager.createDirectoryHook = { _, _, _ in
+            expectation.fulfill()
         }
+        
+        var logCommand = Log(fileManager: mockFileManager, prompt: mockPrompt)
+        logCommand.entryType = .add
+        logCommand.text = ["not used in this test but must be initialized to satisfy the ArgumentParser"]
+        logCommand.options = Changelog.Options(unreleasedChangelogsDirectory: Changelog.Options.defaultUnreleasedChangelogDirectory)
+        
+        // This will swallow other errors thrown by the Log command, but these cases are handled by
+        // the rest of the test suite. In the future, String.write() should be wrapped and mocked
+        // in order to make this test better
+        try? logCommand.run()
+        
+        waitForExpectations(timeout: 0.1)
+    }
+    
+    func test_givenChangelogDirectoryExists_thenDoNotCreateChangelogDirectory() throws {
+        var mockPrompt = MockPrompt<Confirmation>()
+        mockPrompt.mockPromptResponse = try Confirmation.parse(["y"])
+        
+        var mockFileManager = MockFileManager()
+        mockFileManager.fileExistsHook = { _ in true }
+        
+        let expectation = expectation(description: "Directory should not be created (because it already exists!)")
+        expectation.isInverted = true
+        mockFileManager.createDirectoryHook = { _, _, _ in
+            expectation.fulfill()
+        }
+        
+        var logCommand = Log(fileManager: mockFileManager, prompt: mockPrompt)
+        logCommand.entryType = .add
+        logCommand.text = ["not used in this test but must be initialized to satisfy the ArgumentParser"]
+        logCommand.options = Changelog.Options(unreleasedChangelogsDirectory: Changelog.Options.defaultUnreleasedChangelogDirectory)
+        
+        // This will swallow other errors thrown by the Log command, but these cases are handled by
+        // the rest of the test suite. In the future, String.write() should be wrapped and mocked
+        // in order to make this test better
+        try? logCommand.run()
+        
+        waitForExpectations(timeout: 0.1)
     }
     
     func test_givenAdditionOption_whenTextIsValid_thenTextIsWrittenToDisk() throws {
@@ -76,5 +138,16 @@ class LogCommandTests: XCTestCase {
             XCTAssertEqual(entry.text, formattedSampleText)
         }
     }
-    
+}
+
+/// https://github.com/apple/swift-argument-parser/issues/359#issuecomment-991336822
+private extension Log {
+    init(
+        fileManager: FileManaging,
+        prompt: PromptProtocol
+    ) {
+        self.init()
+        self.fileManager = fileManager
+        self.prompt = prompt
+    }
 }

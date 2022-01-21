@@ -32,21 +32,31 @@ struct Log: ParsableCommand {
     var unreleasedChangelogsDirectory: URL {
         options.unreleasedChangelogsDirectory
     }
-    var fileManager: FileManager = .default
+    
+    // Due to the way the ArgumentParser initializes its types, we can't easily inject a
+    // ParsableCommand's dependencies when this type is initialized by the ArgumentParser. Instead,
+    // we can set defaults and change them at runtime if needed. BUT, if we're creating the command
+    // ourselves, we can depdencency-inject and enable testability with an extension 🥳
+    // See: https://github.com/apple/swift-argument-parser/issues/359#issuecomment-991336822
+    var fileManager: FileManaging = FileManager.default
+    var outputController: OutputControlling = OutputController()
+    lazy var prompt: PromptProtocol = Prompt(outputController: outputController)
     
     enum CodingKeys: String, CodingKey {
         case options, entryType, editor, text
     }
-        
+    
     func validate() throws {
         guard text.first != "help" else {
             throw ValidationError(#""help" isn't a valid changelog entry. Did you mean `changelog log --help`?"#)
         }
     }
     
-    public func run() throws {
-        guard fileManager.fileExists(atPath: options.unreleasedChangelogsDirectory.path) else {
-            throw ChangelogError.changelogDirectoryNotFound(expectedPath: options.unreleasedChangelogsDirectory.relativeString)
+    public mutating func run() throws {
+        let changelogPath = options.unreleasedChangelogsDirectory.path
+        
+        if !fileManager.fileExists(atPath: changelogPath) {
+            try createChangelogDirectoryIfNeeded(path: changelogPath)
         }
         
         if text.isEmpty {
@@ -54,6 +64,20 @@ struct Log: ParsableCommand {
         } else {
             try createEntry(with: text)
         }
+    }
+    
+    private mutating func createChangelogDirectoryIfNeeded(path: String) throws {
+        let directoryCreationPrompt = "The `\(path)` directory does not exist. Would you like to create it? [y|N]"
+        let userConfirmation: Confirmation = try prompt.promptUser(with: directoryCreationPrompt)
+        
+        guard userConfirmation.value else {
+            throw ChangelogError.changelogDirectoryNotFound(expectedPath: path)
+        }
+        
+        try fileManager.createDirectory(
+            at: options.unreleasedChangelogsDirectory,
+            withIntermediateDirectories: true, attributes: nil
+        )
     }
     
     private func createEntry(with text: [String]) throws {
@@ -107,10 +131,10 @@ struct Log: ParsableCommand {
         
         try entry.write(toFile: uniqueFilepath.path, atomically: true, encoding: .utf8)
         
-        let filePathString = OutputController.tryWrap(uniqueFilepath.relativePath, inColor: .white, bold: true)
-        let successString = OutputController.tryWrap("🙌 Created changelog entry at \(filePathString)", inColor: .green, bold: true)
+        let filePathString = outputController.tryWrap(uniqueFilepath.relativePath, inColor: .white, bold: true)
+        let successString = outputController.tryWrap("🙌 Created changelog entry at \(filePathString)", inColor: .green, bold: true)
                 
-        OutputController.write("""
+        outputController.write("""
 
             \(entry)
             \(successString)
