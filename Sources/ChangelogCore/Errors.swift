@@ -10,6 +10,7 @@ import Foundation
 enum ChangelogError: LocalizedError, Equatable {
     case changelogDirectoryNotFound(expectedPath: String)
     case malformattedEntry(atPath: String)
+    case malformattedEntryText(String)
     case noEntriesFound
     case noTextEntered
     case changelogNotFound
@@ -21,6 +22,8 @@ enum ChangelogError: LocalizedError, Equatable {
             return "Couldn't find the changelog directory. Please check that `\(expectedPath)` exists and is readable from your current working directory."
         case .malformattedEntry(let path):
             return "The changelog entry at \(path) is malformatted. Please fix or remove the file and try again."
+        case .malformattedEntryText(let text):
+            return "The changelog entry is malformatted. Please fix or remove the file and try again. Entry:\n\(text)"
         case .noEntriesFound:
             return "No unreleased changelog entries were found."
         case .noTextEntered:

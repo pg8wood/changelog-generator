@@ -19,15 +19,24 @@ struct ChangelogEntry {
     
     init(contentsOf fileURL: URL) throws {
         let fileContents = try String(contentsOf: fileURL)
-        var lines = fileContents.components(separatedBy: .newlines)
+        
+        do {
+            try self.init(text: fileContents)
+        } catch {
+            throw ChangelogError.malformattedEntry(atPath: fileURL.path)
+        }
+    }
+    
+    init(text: String) throws {
+        var lines = text.components(separatedBy: .newlines)
         let header = lines.removeFirst()
         
         guard let type = EntryType(title: header.components(separatedBy: .whitespaces).last) else {
-            throw ChangelogError.malformattedEntry(atPath: fileURL.path)
+            throw ChangelogError.malformattedEntryText(text)
         }
         
         self.type = type
-        text = lines.joined(separator: "\n")
+        self.text = lines.joined(separator: "\n")
     }
 }
 
