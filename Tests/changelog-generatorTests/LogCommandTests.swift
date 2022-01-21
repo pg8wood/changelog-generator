@@ -6,66 +6,54 @@
 //
 
 import XCTest
-import TSCBasic
-import ArgumentParser
 @testable import ChangelogCore
 
 class LogCommandTests: XCTestCase {
+    var mockDiskWriter = MockDiskWriter()
+    var mockPrompt = MockPrompt<Confirmation>()
+    var mockFileManager = MockFileManager()
+    
+    override func setUp() {
+        super.setUp()
+        mockDiskWriter = MockDiskWriter()
+        mockFileManager = MockFileManager()
+        mockPrompt = MockPrompt<Confirmation>()
+    }
+    
     func test_givenChangelogDirectoryDoesNotExist_whenPromptIsConfirmed_thenCreateChangelogDirectory() throws {
-        var mockPrompt = MockPrompt<Confirmation>()
         mockPrompt.mockPromptResponse = try Confirmation.parse(["y"])
         
-        var mockFileManager = MockFileManager()
         mockFileManager.fileExistsHook = { _ in false }
         let expectation = expectation(description: "Directory created")
         mockFileManager.createDirectoryHook = { _, _, _ in
             expectation.fulfill()
         }
         
-        var logCommand = Log(fileManager: mockFileManager, prompt: mockPrompt)
-        logCommand.entryType = .add
-        logCommand.text = ["not used in this test but must be initialized to satisfy the ArgumentParser"]
-        logCommand.options = Changelog.Options(unreleasedChangelogsDirectory: Changelog.Options.defaultUnreleasedChangelogDirectory)
+        var logCommand = Log(
+            diskWriter: mockDiskWriter,
+            fileManager: mockFileManager,
+            prompt: mockPrompt
+        )
         
-        // This will swallow other errors thrown by the Log command, but these cases are handled by
-        // the rest of the test suite. In the future, String.write() should be wrapped and mocked
-        // in order to make this test better
-        try? logCommand.run()
-        
+        try logCommand.run()
         waitForExpectations(timeout: 0.1)
     }
     
     func test_givenChangelogDirectoryDoesNotExist_whenPromptIsDenied_thenDoNotCreateChangelogDirectory() throws {
-        var mockPrompt = MockPrompt<Confirmation>()
         mockPrompt.mockPromptResponse = try Confirmation.parse(["n"])
-        
-        var mockFileManager = MockFileManager()
         mockFileManager.fileExistsHook = { _ in false }
         
-        let expectation = expectation(description: "Directory should not be created")
-        expectation.isInverted = true
-        mockFileManager.createDirectoryHook = { _, _, _ in
-            expectation.fulfill()
-        }
+        var logCommand = Log(
+            diskWriter: mockDiskWriter,
+            fileManager: mockFileManager,
+            prompt: mockPrompt
+        )
         
-        var logCommand = Log(fileManager: mockFileManager, prompt: mockPrompt)
-        logCommand.entryType = .add
-        logCommand.text = ["not used in this test but must be initialized to satisfy the ArgumentParser"]
-        logCommand.options = Changelog.Options(unreleasedChangelogsDirectory: Changelog.Options.defaultUnreleasedChangelogDirectory)
-        
-        // This will swallow other errors thrown by the Log command, but these cases are handled by
-        // the rest of the test suite. In the future, String.write() should be wrapped and mocked
-        // in order to make this test better
-        try? logCommand.run()
-        
-        waitForExpectations(timeout: 0.1)
+        XCTAssertThrowsError(try logCommand.run())
     }
     
     func test_givenChangelogDirectoryExists_thenDoNotCreateChangelogDirectory() throws {
-        var mockPrompt = MockPrompt<Confirmation>()
         mockPrompt.mockPromptResponse = try Confirmation.parse(["y"])
-        
-        var mockFileManager = MockFileManager()
         mockFileManager.fileExistsHook = { _ in true }
         
         let expectation = expectation(description: "Directory should not be created (because it already exists!)")
@@ -74,58 +62,47 @@ class LogCommandTests: XCTestCase {
             expectation.fulfill()
         }
         
-        var logCommand = Log(fileManager: mockFileManager, prompt: mockPrompt)
-        logCommand.entryType = .add
-        logCommand.text = ["not used in this test but must be initialized to satisfy the ArgumentParser"]
-        logCommand.options = Changelog.Options(unreleasedChangelogsDirectory: Changelog.Options.defaultUnreleasedChangelogDirectory)
+        var logCommand = Log(
+            diskWriter: mockDiskWriter,
+            fileManager: mockFileManager,
+            prompt: mockPrompt
+        )
         
-        // This will swallow other errors thrown by the Log command, but these cases are handled by
-        // the rest of the test suite. In the future, String.write() should be wrapped and mocked
-        // in order to make this test better
-        try? logCommand.run()
-        
+        try logCommand.run()
         waitForExpectations(timeout: 0.1)
     }
     
     func test_givenAdditionOption_whenTextIsValid_thenTextIsWrittenToDisk() throws {
         let sampleAdditionText = "Added an additive ability to add additions"
         
-        var logCommand = Log()
-        logCommand.entryType = .add
-        logCommand.text = [sampleAdditionText]
-        logCommand.options = Changelog.Options(unreleasedChangelogsDirectory: Changelog.Options.defaultUnreleasedChangelogDirectory)
-        
-        try withTemporaryDirectory { directory in
-            let changelogOptions = Changelog.Options(unreleasedChangelogsDirectory: directory.asURL)
-            logCommand.options = changelogOptions
-            
-            try logCommand.run()
-            
-            let entryFile = try XCTUnwrap(try FileManager.default.contentsOfDirectory(at: directory.asURL, includingPropertiesForKeys: nil).first)
-            let entry = try ChangelogEntry(contentsOf: entryFile)
+        let expectation = expectation(description: "Text written to disk matches format")
+        mockDiskWriter.writeHook = { text, _ in
+            let entry = try ChangelogEntry(text: text)
+            XCTAssertEqual(entry.type, .add)
             
             let formattedSampleText = "- \(sampleAdditionText)\n"
-            
-            XCTAssertEqual(entry.type, .add)
-            XCTAssertEqual(entry.text, formattedSampleText)
+            XCTAssertEqual(formattedSampleText, entry.text)
+            expectation.fulfill()
         }
+        
+        var logCommand = Log(
+            entryType: .add,
+            text: [sampleAdditionText],
+            diskWriter: mockDiskWriter,
+            fileManager: mockFileManager,
+            prompt: mockPrompt
+        )
+        
+        try logCommand.run()
+        waitForExpectations(timeout: 0.1)
     }
     
     func test_giveFixOption_whenMultipleEntriesAreProvided_thenBulletedTextIsWrittenToDisk() throws {
         let sampleFixBullets = ["Fix-it Felix vs.", "Wreck-It Ralph"]
-        
-        var logCommand = Log()
-        logCommand.entryType = .fix
-        logCommand.text = sampleFixBullets
-        
-        try withTemporaryDirectory { directory in
-            let changelogOptions = Changelog.Options(unreleasedChangelogsDirectory: directory.asURL)
-            logCommand.options = changelogOptions
-            
-            try logCommand.run()
-            
-            let entryFile = try XCTUnwrap(try FileManager.default.contentsOfDirectory(at: directory.asURL, includingPropertiesForKeys: nil).first)
-            let entry = try ChangelogEntry(contentsOf: entryFile)
+
+        let expectation = expectation(description: "Text written to disk matches format")
+        mockDiskWriter.writeHook = { text, _ in
+            let entry = try ChangelogEntry(text: text)
             
             let formattedSampleText =
                 """
@@ -133,21 +110,40 @@ class LogCommandTests: XCTestCase {
                 - \(sampleFixBullets[1])
 
                 """
-            
+            XCTAssertEqual(formattedSampleText, entry.text)
             XCTAssertEqual(entry.type, .fix)
-            XCTAssertEqual(entry.text, formattedSampleText)
+            expectation.fulfill()
         }
+        
+        var logCommand = Log(
+            entryType: .fix,
+            text: sampleFixBullets,
+            diskWriter: mockDiskWriter,
+            fileManager: mockFileManager,
+            prompt: mockPrompt
+        )
+        
+        try logCommand.run()
+        waitForExpectations(timeout: 0.1)
     }
 }
 
 /// https://github.com/apple/swift-argument-parser/issues/359#issuecomment-991336822
 private extension Log {
     init(
+        entryType: EntryType = .add,
+        text: [String] = ["Not used in this test but must be initialized to satisfy the ArgumentParser"],
+        diskWriter: DiskWriting,
         fileManager: FileManaging,
-        prompt: PromptProtocol
+        prompt: PromptProtocol,
+        options: Changelog.Options = Changelog.Options(unreleasedChangelogsDirectory: Changelog.Options.defaultUnreleasedChangelogDirectory)
     ) {
         self.init()
+        self.text = text
+        self.entryType = entryType
+        self.diskWriter = diskWriter
         self.fileManager = fileManager
         self.prompt = prompt
+        self.options = options
     }
 }
