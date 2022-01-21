@@ -12,7 +12,11 @@ let package = Package(
         .executable(name: "changelog", targets: ["changelog-generator"])
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-argument-parser", from: "0.0.1"),
+        .package(
+            name: "swift-argument-parser",
+            url: "https://github.com/apple/swift-argument-parser",
+            .exact("1.0.2")
+        ),
         .package(url: "https://github.com/apple/swift-tools-support-core", from: "0.2.0")
     ],
     targets: [
