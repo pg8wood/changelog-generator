@@ -10,14 +10,6 @@ import TSCBasic
 @testable import ChangelogCore
 
 class PublishCommandTests: XCTestCase {
-    func test_givenNoVersionArgument_thenThrowsError() {
-        var publishCommand = Publish.makeCommandWithFakeCommandLineArguments()
-        publishCommand.version = ""
-        publishCommand.options = Changelog.Options(unreleasedChangelogsDirectory: Changelog.Options.defaultUnreleasedChangelogDirectory)
-        
-        XCTAssertThrowsError(try publishCommand.run())
-    }
-    
     func test_givenValidCommand_whenChangelogDirectoryDoesntExist_thenThrowsError() {
         var publishCommand = Publish.makeCommandWithFakeCommandLineArguments()
         publishCommand.version = "42"
