@@ -39,6 +39,7 @@ struct Log: ParsableCommand {
     // ourselves, we can depdencency-inject and enable testability with an extension 🥳
     // See: https://github.com/apple/swift-argument-parser/issues/359#issuecomment-991336822
     var fileManager: FileManaging = FileManager.default
+    var diskWriter: DiskWriting = DiskWriter()
     var outputController: OutputControlling = OutputController()
     lazy var prompt: PromptProtocol = Prompt(outputController: outputController)
     
@@ -94,8 +95,7 @@ struct Log: ParsableCommand {
             .appendingPathExtension("md")
         
         let hint = "<!-- Enter your changelog message below this line exactly how you want it to appear in the changelog. Lines surrounded in markdown (HTML) comments will be ignored.-->"
-        try Data(hint.utf8)
-            .write(to: temporaryFilePath)
+        try diskWriter.write(hint, toFile: temporaryFilePath.path)
         
         try InteractiveCommandRunner.runCommand("\(editor) \(temporaryFilePath.path)") {
             let handle = try FileHandle(forReadingFrom: temporaryFilePath)
@@ -129,7 +129,7 @@ struct Log: ParsableCommand {
 
             """
         
-        try entry.write(toFile: uniqueFilepath.path, atomically: true, encoding: .utf8)
+        try diskWriter.write(entry, toFile: uniqueFilepath.path)
         
         let filePathString = outputController.tryWrap(uniqueFilepath.relativePath, inColor: .white, bold: true)
         let successString = outputController.tryWrap("🙌 Created changelog entry at \(filePathString)", inColor: .green, bold: true)

@@ -22,4 +22,18 @@ protocol FileManaging {
     ) throws -> [URL]
 }
 
+extension FileManaging {
+    func contentsOfDirectory(
+        at url: URL,
+        includingPropertiesForKeys keys: [URLResourceKey]?
+    ) throws -> [URL] {
+        try contentsOfDirectory(
+            at: url,
+            includingPropertiesForKeys:
+                keys,
+            options: []
+        )
+    }
+}
+
 extension FileManager: FileManaging { }

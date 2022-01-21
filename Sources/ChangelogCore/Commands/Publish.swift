@@ -47,7 +47,7 @@ struct Publish: ParsableCommand {
         options.unreleasedChangelogsDirectory
     }
     
-    private var fileManager: FileManager = .default
+    private var fileManager: FileManaging = FileManager.default
     var outputController: OutputControlling = OutputController()
     
     enum CodingKeys: String, CodingKey {
