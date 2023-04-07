@@ -11,13 +11,13 @@ Teams that keep an up-to-date changelog are often plagued by merge conflicts int
 ### [Mint](https://github.com/yonaskolb/Mint)
 
 ```sh
-$ mint install pg8wood/changelog-generator
+mint install pg8wood/changelog-generator
 ```
 
 ### Manual Installation
 ```sh
-$ swift build -c release
-$ cp -f .build/release/changelog /usr/local/bin/changelog
+swift build -c release
+cp -f .build/release/changelog /usr/local/bin/changelog
 ```
 
 ## Setup
@@ -34,7 +34,7 @@ To view all the available options, run `$ changelog help`
 Changelog entries may be added interactively with your favorite text editor, or quick entries can be passed as command-line arguments.
 
 ```sh
-$ changelog add "Add something cool" "And something boring"
+changelog add "Add something cool" "And something boring"
 
 ### Added
 - Add something cool
